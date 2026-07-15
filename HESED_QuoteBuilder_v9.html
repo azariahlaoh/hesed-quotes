@@ -4,41 +4,53 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>HESED Quote Builder — TW Audio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,sans-serif;background:#f0f0f0;color:#1a1a1a;min-height:100vh}
+:root{
+  --ink:#1a1a1a; --muted:#86868b; --border:#e5e5e7; --bg:#f5f5f7;
+  --radius:10px; --radius-lg:16px;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.04), 0 1px 1px rgba(0,0,0,.03);
+  --shadow-md:0 8px 24px rgba(0,0,0,.08);
+  --font:"Inter",-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.45;-webkit-font-smoothing:antialiased}
 .app{max-width:980px;margin:0 auto;padding:24px 16px}
-.top-bar{background:#1a1a1a;color:#fff;padding:14px 20px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:16px;flex-wrap:wrap}
-.top-bar h1{font-size:16px;font-weight:700;letter-spacing:.02em}
-.top-bar p{font-size:11px;color:#999;margin-top:2px}
-.card{background:#fff;border-radius:8px;padding:20px;margin-bottom:16px;border:1px solid #e8e8e8}
+.top-bar{background:var(--ink);color:#fff;padding:16px 22px;border-radius:var(--radius-lg);display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:16px;flex-wrap:wrap}
+.top-bar h1{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.top-bar p{font-size:11.5px;color:#9a9a9e;margin-top:3px}
+.card{background:#fff;border-radius:var(--radius-lg);padding:22px;margin-bottom:16px;border:1px solid var(--border);box-shadow:var(--shadow-sm)}
 .card h2{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#aaa;margin-bottom:14px}
-.card-tabs{display:flex;gap:0;border-bottom:1px solid #eee;margin-bottom:16px;margin-top:-4px}
-.card-tab{padding:7px 16px;font-size:12px;font-weight:600;cursor:pointer;color:#aaa;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none}
-.card-tab.active{color:#1a1a1a;border-bottom:2px solid #1a1a1a}
+.card-tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px;margin-top:-4px}
+.card-tab{padding:9px 16px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;border-radius:6px 6px 0 0;transition:color .15s}
+.card-tab.active{color:var(--ink);border-bottom:2px solid var(--ink)}
 .sub-pane{display:none}.sub-pane.active{display:block}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.grid-full{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}
-.field label{display:block;font-size:11px;color:#888;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
-.field input,.field select,.field textarea{width:100%;padding:9px 11px;border:1px solid #ddd;border-radius:6px;font-size:13px;color:#1a1a1a;background:#fff;font-family:inherit}
-.field input::placeholder,.field textarea::placeholder{color:#c2c2c2;font-style:italic;opacity:1}
-.field input::-webkit-input-placeholder,.field textarea::-webkit-input-placeholder{color:#c2c2c2;font-style:italic}
-.field input::-moz-placeholder,.field textarea::-moz-placeholder{color:#c2c2c2;font-style:italic;opacity:1}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid-full{display:grid;grid-template-columns:1fr;gap:14px;margin-top:14px}
+.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.field input,.field select,.field textarea{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:var(--radius);font-size:15px;color:var(--ink);background:#fbfbfc;font-family:inherit;min-height:44px;transition:border-color .15s,background .15s,box-shadow .15s}
+.field input::placeholder,.field textarea::placeholder{color:#c2c2c6;font-style:normal;opacity:1}
+.field input::-webkit-input-placeholder,.field textarea::-webkit-input-placeholder{color:#c2c2c6;font-style:normal}
+.field input::-moz-placeholder,.field textarea::-moz-placeholder{color:#c2c2c6;font-style:normal;opacity:1}
 .field textarea{resize:vertical;min-height:52px;line-height:1.5}
-.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:#1a1a1a}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:#1a1a1a;background:#fff;box-shadow:0 0 0 4px rgba(26,26,26,.07)}
 .add-grid{display:grid;grid-template-columns:1.5fr 2.5fr 65px 90px auto;gap:10px;align-items:end}
 .custom-grid{display:grid;grid-template-columns:1fr 2.5fr 1fr 1fr auto;gap:10px;align-items:end}
-.btn{padding:9px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:none}
-.btn-dark{background:#1a1a1a;color:#fff}
+.btn{padding:11px 18px;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;border:none;min-height:44px;transition:transform .1s,opacity .15s,background .15s}
+.btn:active{transform:scale(.97)}
+.btn-dark{background:var(--ink);color:#fff;box-shadow:var(--shadow-sm)}
 .btn-dark:hover{opacity:.85}
-.btn-outline{background:#fff;color:#1a1a1a;border:1px solid #ccc}
-.btn-outline:hover{background:#f5f5f5}
-.btn-sm{padding:4px 8px;font-size:11px;border-radius:4px;cursor:pointer;border:none;font-weight:600}
+.btn-outline{background:#fff;color:var(--ink);border:1px solid #d2d2d7}
+.btn-outline:hover{background:var(--bg)}
+.btn-sm{padding:6px 11px;font-size:11.5px;border-radius:7px;cursor:pointer;border:none;font-weight:600;min-height:30px}
 .btn-del{background:#fff;color:#c0392b;border:1px solid #f0c0bb}
 .btn-del:hover{background:#fff0ee}
 table{width:100%;border-collapse:collapse}
-th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#888;padding:8px 10px;border-bottom:2px solid #1a1a1a;text-align:left}
-td{padding:10px;border-bottom:1px solid #f0f0f0;vertical-align:top;font-size:13px}
+th{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;padding:8px 10px;border-bottom:2px solid var(--ink);text-align:left}
+td{padding:10px;border-bottom:1px solid #f0f0f0;vertical-align:top;font-size:13.5px}
 td:nth-child(5),td:nth-child(6),th:nth-child(5),th:nth-child(6){text-align:right}
 td:nth-child(4),th:nth-child(4){text-align:center}
 .qty-inp{width:48px;text-align:center;padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:12px}
@@ -67,14 +79,14 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .doc-tot-sub .amt{font-size:14px;font-weight:700;color:#111;white-space:nowrap}
 .custom-badge{display:inline-block;font-size:9px;background:#f0f0f0;color:#888;border-radius:3px;padding:1px 5px;margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
 .idr-badge{display:inline-block;font-size:9px;background:#e8f4ea;color:#2d7a3a;border-radius:3px;padding:1px 5px;margin-top:2px;font-weight:600}
-.tot-box{background:#1a1a1a;color:#fff;border-radius:8px;padding:18px 20px;margin-bottom:16px}
+.tot-box{background:var(--ink);color:#fff;border-radius:var(--radius-lg);padding:20px 22px;margin-bottom:16px;box-shadow:var(--shadow-md)}
 .tot-row{display:flex;justify-content:space-between;font-size:13px;color:#aaa;padding:3px 0}
 .tot-grand{display:flex;justify-content:space-between;font-size:18px;font-weight:700;color:#fff;border-top:1px solid #333;margin-top:10px;padding-top:12px}
 .actions{display:flex;gap:10px;flex-wrap:wrap}
 .empty-state{text-align:center;padding:32px;color:#bbb;font-size:13px}
-.tabs{display:flex;gap:0;border-bottom:2px solid #e8e8e8;margin-bottom:20px}
-.tab{padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;color:#999;border-bottom:3px solid transparent;margin-bottom:-2px;background:none;border-top:none;border-left:none;border-right:none}
-.tab.active{color:#1a1a1a;border-bottom:3px solid #1a1a1a}
+.tabs{display:flex;gap:2px;border-bottom:2px solid var(--border);margin-bottom:20px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab{padding:12px 20px;font-size:13.5px;font-weight:600;cursor:pointer;color:#a0a0a5;border-bottom:3px solid transparent;margin-bottom:-2px;background:none;border-top:none;border-left:none;border-right:none;white-space:nowrap;min-height:44px;transition:color .15s}
+.tab.active{color:var(--ink);border-bottom:3px solid var(--ink)}
 .pane{display:none}.pane.active{display:block}
 .hint{font-size:11px;color:#aaa;margin-top:8px}
 .idr-hint{font-size:11px;color:#2d7a3a;margin-top:8px;background:#e8f4ea;padding:6px 10px;border-radius:4px}
@@ -83,12 +95,12 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .price-disc-total{font-size:13px;color:#c0392b;font-weight:700;display:block}
 .price-saved{font-size:10px;color:#2d7a3a;background:#e8f4ea;border-radius:3px;padding:1px 5px;display:inline-block;margin-top:2px}
 .qnum-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
-.qnum-preview{background:#f5f5f5;border:1px solid #e0e0e0;border-radius:6px;padding:9px 12px;font-size:14px;font-weight:700;letter-spacing:.04em;color:#1a1a1a;white-space:nowrap;min-width:220px}
+.qnum-preview{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:14px;font-weight:700;letter-spacing:.02em;color:var(--ink);white-space:nowrap;min-width:220px}
 .qnum-preview .qn-label{font-size:10px;color:#aaa;font-weight:400;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:3px}
 .qnum-seq{display:flex;align-items:center;gap:6px}
-.seq-btn{width:28px;height:28px;border:1px solid #ddd;border-radius:4px;background:#fff;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;color:#1a1a1a}
+.seq-btn{width:38px;height:38px;border:1px solid var(--border);border-radius:8px;background:#fff;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;color:var(--ink)}
 .seq-btn:hover{background:#f0f0f0}
-.seq-inp{width:52px;text-align:center;padding:5px 6px;border:1px solid #ddd;border-radius:4px;font-size:13px;font-weight:700}
+.seq-inp{width:58px;height:38px;text-align:center;padding:5px 6px;border:1px solid var(--border);border-radius:8px;font-size:15px;font-weight:700}
 
 
 /* Product search */
@@ -108,9 +120,9 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .si-series{font-size:9px;background:#f0f0f0;color:#999;border-radius:3px;padding:1px 5px;font-weight:600}
 .search-empty{padding:14px 12px;font-size:12px;color:#bbb;text-align:center}
 .search-hint{font-size:11px;color:#aaa;margin-top:6px}
-.mode-toggle{display:inline-flex;background:#f0f0f0;border-radius:6px;padding:3px;gap:2px;margin-bottom:14px}
-.mode-btn{padding:5px 14px;border-radius:4px;border:none;background:none;font-size:12px;font-weight:600;cursor:pointer;color:#888;transition:background .15s,color .15s}
-.mode-btn.active{background:#1a1a1a;color:#fff}
+.mode-toggle{display:inline-flex;background:var(--bg);border-radius:9px;padding:3px;gap:2px;margin-bottom:14px}
+.mode-btn{padding:8px 16px;min-height:38px;border-radius:7px;border:none;background:none;font-size:12.5px;font-weight:600;cursor:pointer;color:#888;transition:background .15s,color .15s}
+.mode-btn.active{background:var(--ink);color:#fff}
 .catalog-mode{display:none}.catalog-mode.active{display:block}
 .browse-grid{display:grid;grid-template-columns:1.4fr 2.6fr;gap:10px;margin-bottom:10px}
 .browse-eur{font-size:11px;color:#888;margin-top:6px;min-height:16px}
@@ -280,6 +292,63 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 
 /* Fixed footer — hidden on screen, shows on every printed page */
 .doc-footer-fixed{display:none}
+
+/* ── RESPONSIVE (phone/tablet) — builder & history screens only;
+   the printed/preview document (.doc-page) stays desktop-width by design,
+   since it mirrors a fixed A4 page ─────────────────────────────── */
+@media (max-width:760px){
+  .app{padding:14px 10px}
+  .top-bar{padding:14px 16px;border-radius:14px}
+  .top-bar h1{font-size:15px}
+  .top-bar p{font-size:10.5px}
+  .card{padding:16px;border-radius:14px}
+  .grid2,.add-grid,.custom-grid,.browse-grid{grid-template-columns:1fr!important}
+  .add-row{grid-template-columns:1fr!important}
+  .qnum-row{flex-direction:column;align-items:stretch}
+  .qnum-preview{min-width:0}
+  .actions{flex-direction:column}
+  .actions .btn{width:100%}
+  .print-actions{flex-direction:column;align-items:stretch}
+  .print-actions .btn{width:100%}
+  .section-bar{flex-direction:column;align-items:stretch}
+
+  /* Item table → stacked cards */
+  .items-table thead{display:none}
+  .items-table,.items-table tbody,.items-table tr,.items-table td{display:block;width:100%}
+  .items-table{margin-top:4px}
+  .items-table tr{
+    position:relative;background:#fff;border:1px solid var(--border);
+    border-radius:var(--radius-lg);padding:14px 14px 50px;margin-bottom:12px;
+    box-shadow:var(--shadow-sm);
+  }
+  .items-table tr.section-hdr-row{padding:10px 14px;box-shadow:none}
+  .items-table td{border-bottom:none;padding:6px 0}
+  .items-table td[data-label]:not([data-label=""])::before{
+    content:attr(data-label);display:block;font-size:9.5px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px;
+  }
+  .items-table td:nth-child(1){padding-right:70px}
+  .items-table td:nth-child(2){position:absolute;top:14px;right:14px;width:auto;padding:0}
+  .items-table td:nth-child(5),.items-table td:nth-child(6){display:inline-block;width:calc(50% - 8px);vertical-align:top}
+  .items-table td:nth-child(5){margin-right:12px}
+  .items-table td:last-child{position:absolute;bottom:12px;right:14px;width:auto;padding:0}
+
+  /* History table → stacked cards */
+  #history-table thead{display:none}
+  #history-table,#history-table tbody,#history-table tr,#history-table td{display:block;width:100%}
+  #history-table tr{
+    background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:12px 14px;margin-bottom:10px;box-shadow:var(--shadow-sm);
+  }
+  #history-table td{border-bottom:none;padding:3px 0;text-align:left!important}
+  #history-table td[data-label]:not([data-label=""])::before{
+    content:attr(data-label)": ";font-weight:700;color:var(--muted);font-size:10.5px;
+    text-transform:uppercase;letter-spacing:.04em;margin-right:4px;
+  }
+  #history-table td:last-child{margin-top:8px}
+
+  .desc-edit,.specs-edit{resize:none}
+}
 
 /* ── PRINT ───────────────────────────────────────────────────── */
 @page{size:A4;margin:0}
@@ -586,7 +655,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
       </select>
       <button type="button" class="btn-sm btn-outline" onclick="addNewSection()">+ Bagian / Ruangan Baru</button>
     </div>
-    <table>
+    <table class="items-table">
       <thead><tr>
         <th style="width:9%">Produk</th>
         <th style="width:8%;text-align:center">Gambar</th>
@@ -2166,18 +2235,18 @@ function renderAll(){
     +'</div>';
 
     var rowHtml='<tr draggable="true" data-idx="'+i+'" ondragstart="dragStart(event,'+i+')" ondragover="dragOverRow(event)" ondragleave="dragLeaveRow(event)" ondrop="dropRow(event,'+i+')" ondragend="dragEndRow()">'
-      +'<td><span class="drag-grip" title="Geser untuk mengurutkan ulang">&#10247;</span><strong>'+it.code+'</strong><div style="font-size:10px;color:#aaa;margin-top:2px">'+it.series+'</div>'+badge+'</td>'
-      +'<td style="text-align:center;vertical-align:top">'+imgCellHtml+'</td>'
-      +'<td style="vertical-align:top">'+descEditHtml+'</td>'
-      +'<td style="vertical-align:top">'+specsEditHtml+'</td>'
-      +'<td style="text-align:center"><input class="qty-inp" type="number" value="'+it.qty+'" min="1" onchange="updateQty('+i+',this.value)"></td>'
-      +'<td style="text-align:center;vertical-align:top">'
+      +'<td data-label="Produk"><span class="drag-grip" title="Geser untuk mengurutkan ulang">&#10247;</span><strong>'+it.code+'</strong><div style="font-size:10px;color:#aaa;margin-top:2px">'+it.series+'</div>'+badge+'</td>'
+      +'<td data-label="Gambar" style="text-align:center;vertical-align:top">'+imgCellHtml+'</td>'
+      +'<td data-label="Deskripsi" style="vertical-align:top">'+descEditHtml+'</td>'
+      +'<td data-label="Spesifikasi" style="vertical-align:top">'+specsEditHtml+'</td>'
+      +'<td data-label="Qty" style="text-align:center"><input class="qty-inp" type="number" value="'+it.qty+'" min="1" onchange="updateQty('+i+',this.value)"></td>'
+      +'<td data-label="Disc%" style="text-align:center;vertical-align:top">'
         +'<input class="'+discInpClass+'" type="number" value="'+discInpVal+'" placeholder="'+discPlaceholder+'" min="0" max="100" step="0.5" onchange="updateItemDisc('+i+',this.value)" title="Disc %">'
         +'<span class="disc-item-lbl">%</span>'
       +'</td>'
-      +'<td style="vertical-align:top">'+unitBreakdown+inlineControls+'</td>'
-      +'<td style="vertical-align:top">'+totalBreakdown+'</td>'
-      +'<td><button class="btn-sm btn-del" onclick="removeItem('+i+')">\u2715</button></td>'
+      +'<td data-label="Harga" style="vertical-align:top">'+unitBreakdown+inlineControls+'</td>'
+      +'<td data-label="Harga Qty" style="vertical-align:top">'+totalBreakdown+'</td>'
+      +'<td data-label=""><button class="btn-sm btn-del" onclick="removeItem('+i+')">\u2715</button></td>'
       +'</tr>';
 
     var secKey=it.section||'';
@@ -2526,12 +2595,12 @@ function loadQuoteHistoryList(){
       var updated=r.updated_at?new Date(r.updated_at).toLocaleString('id-ID'):'';
       var safeRef=String(r.ref).replace(/'/g,"\\'");
       return '<tr>'
-        +'<td><strong>'+escapeHtml(r.ref)+'</strong></td>'
-        +'<td>'+escapeHtml(r.client||'')+'</td>'
-        +'<td>'+escapeHtml(r.quote_date||'')+'</td>'
-        +'<td style="text-align:right">'+fmt(r.grand_total||0)+'</td>'
-        +'<td>'+updated+'</td>'
-        +'<td style="white-space:nowrap">'
+        +'<td data-label="Ref"><strong>'+escapeHtml(r.ref)+'</strong></td>'
+        +'<td data-label="Client">'+escapeHtml(r.client||'')+'</td>'
+        +'<td data-label="Date">'+escapeHtml(r.quote_date||'')+'</td>'
+        +'<td data-label="Total" style="text-align:right">'+fmt(r.grand_total||0)+'</td>'
+        +'<td data-label="Updated">'+updated+'</td>'
+        +'<td data-label="">'
           +'<button class="btn-sm btn-outline" onclick="loadQuoteFromHistory(\''+safeRef+'\')">Load</button> '
           +'<button class="btn-sm btn-del" onclick="deleteQuoteFromHistory(\''+safeRef+'\')">Delete</button>'
         +'</td>'
