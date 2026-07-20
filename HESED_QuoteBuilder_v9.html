@@ -71,10 +71,15 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .img-cell-actions{display:flex;flex-direction:column;gap:4px;width:100%}
 .img-action-btn{width:100%;padding:4px 6px;font-size:10.5px;min-height:0;white-space:nowrap}
 .doc-custom-bar{margin-top:-4px}
-.adv-toggle-btn{display:flex;align-items:center;gap:5px;width:100%;text-align:left;padding:5px 0;margin-top:6px;border:none;background:none;font-size:10px;color:var(--muted);cursor:pointer;font-weight:600}
-.adv-toggle-btn:hover{color:var(--ink)}
-.adv-toggle-arrow{font-size:8px}
 .doc-size-lbl-inline{font-size:10px;color:#666;white-space:nowrap}
+
+/* Quick-add (raw text) results */
+.qa-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:#fbfbfc}
+.qa-raw{font-size:12px;font-weight:600;color:var(--ink);white-space:nowrap}
+.qa-qty{font-size:11px;color:var(--muted);background:var(--bg);border-radius:4px;padding:2px 7px}
+.qa-status{font-size:12px;flex:1;min-width:160px}
+.qa-ok{color:#2d7a3a}
+.qa-bad{color:#c0392b}
 .doc-custom-lbl{font-size:12px;color:#666;font-weight:600}
 .doc-custom-bar select{padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;color:var(--ink)}
 
@@ -553,6 +558,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
       <div class="mode-toggle">
         <button class="mode-btn active" id="mode-browse-btn" onclick="setCatalogMode('browse')">&#9776; Browse</button>
         <button class="mode-btn" id="mode-search-btn" onclick="setCatalogMode('search')">&#128269; Search</button>
+        <button class="mode-btn" id="mode-quick-btn" onclick="setCatalogMode('quick')">&#9000; Teks Cepat</button>
       </div>
 
       <!-- BROWSE MODE -->
@@ -609,7 +615,19 @@ td:nth-child(4),th:nth-child(4){text-align:center}
         </div>
       </div>
 
+      <!-- QUICK ADD MODE -->
+      <div class="catalog-mode" id="mode-quick">
+        <div class="field">
+          <label>Tempel/ketik daftar produk</label>
+          <textarea id="quick-add-text" placeholder="mis. VERA 50 (2), ELLA (4)&#10;atau satu baris per produk" style="min-height:90px"></textarea>
+        </div>
+        <div class="hint">Kode produk lalu jumlah dalam kurung, mis. "VERA50 (2)" &mdash; pisahkan dengan koma atau baris baru. Jumlah boleh ditulis "x2", "2x", atau angka biasa di akhir; kalau tidak ditulis, dianggap 1.</div>
+        <button class="btn btn-dark" style="margin-top:10px" onclick="parseQuickAdd()">Proses daftar</button>
+        <div id="quick-add-results" style="margin-top:14px;display:none"></div>
+      </div>
+
       <!-- Shared: selected + qty + options + add -->
+      <div id="shared-add-row-wrap">
       <div class="add-row" style="margin-top:12px">
         <div class="field">
           <label>Selected</label>
@@ -646,6 +664,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
         </div>
       </div>
       <input type="hidden" id="selected-prod-code" value="">
+      </div>
     </div>
 
     <div class="sub-pane" id="sub-custom">
@@ -1890,18 +1909,21 @@ function showSubTab(t){
 function setCatalogMode(mode){
   document.getElementById('mode-browse').classList.toggle('active', mode==='browse');
   document.getElementById('mode-search').classList.toggle('active', mode==='search');
+  document.getElementById('mode-quick').classList.toggle('active', mode==='quick');
   document.getElementById('mode-browse-btn').classList.toggle('active', mode==='browse');
   document.getElementById('mode-search-btn').classList.toggle('active', mode==='search');
+  document.getElementById('mode-quick-btn').classList.toggle('active', mode==='quick');
+  document.getElementById('shared-add-row-wrap').style.display=(mode==='quick')?'none':'block';
   // clear the other mode's state when switching
   if(mode==='search'){
     var prodEl=document.getElementById('prod');if(prodEl)prodEl.value='';
     var beurEl=document.getElementById('browse-eur');if(beurEl)beurEl.textContent='';
-  } else {
+  } else if(mode==='browse'){
     var psEl=document.getElementById('prod-search');if(psEl)psEl.value='';
     var scEl=document.getElementById('search-clear');if(scEl)scEl.style.display='none';
     closeSearchDrop();searchResults=[];
   }
-  // always clear shared selection
+  // always clear shared selection (not used by quick-add mode)
   selectedProd=null;
   document.getElementById('selected-prod-label').value='';
   document.getElementById('selected-prod-code').value='';
@@ -2148,17 +2170,16 @@ document.addEventListener('click',function(e){
 
 function fmt(n){return 'IDR'+Math.round(n).toLocaleString('id-ID');}
 
-function addCatalogItem(){
-  if(!selectedProd){alert('Please select a product first.');return;}
-  var p=selectedProd;
-  var qty=parseInt(document.getElementById('qty').value)||1;
-  var ex=items.find(function(i){return i.code===p.code && (i.section||'')===currentSection;});
+// Shared by the single-pick Add flow and Quick Add (raw-text) — merges
+// into an existing line in the current section, or pushes a new one.
+function addProductToItems(p,qty,opts){
   var isSM=p.series&&p.series.indexOf('SM-')===0;
-  var opts=getAddOpts('');
+  opts=opts||{fxOn:false,fxRate:0,fxCurrency:'',ppnOn:false,itemDisc:0};
   if(isSM)opts.ppnOn=false;
+  var ex=items.find(function(i){return i.code===p.code && (i.section||'')===currentSection;});
   if(ex){
-    // merge qty, but also apply whatever FX/PPN/discount the user just picked
-    // for this add — otherwise those choices would be silently discarded.
+    // merge qty, but also apply whatever FX/PPN/discount was just picked —
+    // otherwise those choices would be silently discarded.
     ex.qty+=qty;
     ex.fxOn=opts.fxOn; ex.fxRate=opts.fxRate; ex.fxCurrency=opts.fxCurrency;
     ex.ppnOn=opts.ppnOn; ex.itemDisc=opts.itemDisc;
@@ -2181,6 +2202,14 @@ function addCatalogItem(){
       ppnOn:opts.ppnOn, itemDisc:opts.itemDisc
     });
   }
+}
+
+function addCatalogItem(){
+  if(!selectedProd){alert('Please select a product first.');return;}
+  var p=selectedProd;
+  var qty=parseInt(document.getElementById('qty').value)||1;
+  var opts=getAddOpts('');
+  addProductToItems(p,qty,opts);
   // reset search mode safely
   var psEl=document.getElementById('prod-search');
   if(psEl)psEl.value='';
@@ -2203,6 +2232,99 @@ function addCatalogItem(){
   resetAddOpts('');
   document.getElementById('qty').value=1;
   renderAll();
+}
+
+/* ---- Quick Add (raw text, e.g. "VERA 50 (2), ELLA (4)") ---- */
+var quickAddParsed=[];
+
+function parseQuickAddLine(tok){
+  var qty=1, name=tok, m;
+  if((m=tok.match(/\(\s*(\d+)\s*\)\s*$/))){ qty=parseInt(m[1])||1; name=tok.slice(0,m.index).trim(); }
+  else if((m=tok.match(/[x×]\s*(\d+)\s*$/i))){ qty=parseInt(m[1])||1; name=tok.slice(0,m.index).trim(); }
+  else if((m=tok.match(/^(\d+)\s*[x×]\s*(.+)$/i))){ qty=parseInt(m[1])||1; name=m[2].trim(); }
+  else if((m=tok.match(/(?:^|\s)(\d+)\s*$/))){ qty=parseInt(m[1])||1; name=tok.slice(0,m.index).trim(); }
+  return {raw:tok, name:name||tok, qty:qty};
+}
+
+// Exact code match (ignoring spaces/hyphens) first, then prefix match,
+// then fall back to the same fuzzy search the Search tab already uses.
+// Multiple equally-plausible hits come back as 'ambiguous' rather than
+// guessing — wrong guesses on a client-facing quote are worse than asking.
+function matchQuickAddProduct(name){
+  var norm=(name||'').toUpperCase().replace(/[\s\-]+/g,'');
+  if(!norm)return {status:'notfound'};
+  var exact=PRODUCTS.filter(function(p){return p.code.toUpperCase().replace(/[\s\-]+/g,'')===norm;});
+  if(exact.length===1)return {status:'matched',product:exact[0]};
+  var starts=PRODUCTS.filter(function(p){return p.code.toUpperCase().replace(/[\s\-]+/g,'').indexOf(norm)===0;});
+  if(starts.length===1)return {status:'matched',product:starts[0]};
+  var results=searchProducts(name);
+  if(results.length===1)return {status:'matched',product:results[0]};
+  var candidates=(results.length?results:starts).slice(0,8);
+  if(candidates.length>1)return {status:'ambiguous',candidates:candidates};
+  return {status:'notfound'};
+}
+
+function parseQuickAdd(){
+  var raw=document.getElementById('quick-add-text').value;
+  var tokens=raw.split(/[\n,]+/).map(function(s){return s.trim();}).filter(Boolean);
+  if(!tokens.length){alert('Tulis daftar produk dahulu.');return;}
+  quickAddParsed=tokens.map(function(tok){
+    var parsed=parseQuickAddLine(tok);
+    var match=matchQuickAddProduct(parsed.name);
+    parsed.status=match.status;
+    parsed.product=match.product||null;
+    parsed.candidates=match.candidates||null;
+    return parsed;
+  });
+  renderQuickAddResults();
+}
+
+function renderQuickAddResults(){
+  var wrap=document.getElementById('quick-add-results');
+  if(!quickAddParsed.length){wrap.style.display='none';wrap.innerHTML='';return;}
+  wrap.style.display='block';
+  wrap.innerHTML=quickAddParsed.map(function(r,i){
+    var statusHtml;
+    if(r.status==='matched'){
+      statusHtml='<span class="qa-status qa-ok">&#10003; '+escapeHtml(r.product.code)+' &mdash; '+escapeHtml(r.product.desc.slice(0,42))+'</span>';
+    } else if(r.status==='ambiguous'){
+      statusHtml='<select class="ioc-sel qa-status" onchange="resolveQuickAddAmbiguous('+i+',this.value)">'
+        +'<option value="">Beberapa cocok, pilih salah satu...</option>'
+        +r.candidates.map(function(c){return '<option value="'+escapeHtml(c.code)+'">'+escapeHtml(c.code)+' &mdash; '+escapeHtml(c.desc.slice(0,42))+'</option>';}).join('')
+      +'</select>';
+    } else {
+      statusHtml='<span class="qa-status qa-bad">&#10007; Tidak ditemukan &mdash; akan dilewati</span>';
+    }
+    return '<div class="qa-row">'
+      +'<span class="qa-raw">&quot;'+escapeHtml(r.raw)+'&quot;</span>'
+      +'<span class="qa-qty">Qty '+r.qty+'</span>'
+      +statusHtml
+    +'</div>';
+  }).join('')
+  +'<button type="button" class="btn btn-dark" style="margin-top:10px" onclick="commitQuickAdd()">+ Tambahkan yang cocok ke Daftar Barang</button>';
+}
+
+function resolveQuickAddAmbiguous(i,code){
+  if(!code||!quickAddParsed[i])return;
+  var p=PRODUCTS.find(function(x){return x.code===code;});
+  if(!p)return;
+  quickAddParsed[i].status='matched';
+  quickAddParsed[i].product=p;
+  renderQuickAddResults();
+}
+
+function commitQuickAdd(){
+  var added=0, skipped=0;
+  quickAddParsed.forEach(function(r){
+    if(r.status!=='matched'||!r.product){skipped++;return;}
+    addProductToItems(r.product,r.qty,null);
+    added++;
+  });
+  document.getElementById('quick-add-text').value='';
+  quickAddParsed=[];
+  renderQuickAddResults();
+  renderAll();
+  alert(added+' produk ditambahkan'+(skipped?', '+skipped+' dilewati (tidak ditemukan/belum dipilih)':'')+'.');
 }
 
 function addCustomItem(){
@@ -2583,21 +2705,6 @@ function updateItemDisc(i,v){
   renderAll();
 }
 
-// Per-row "Opsi lanjutan" (FX/PPN/document sizing) collapse state, keyed
-// by item index. Rows with something already customized start expanded so
-// nothing already-set is hidden from view.
-let advancedOpenIdx={};
-function isAdvancedOpen(i){
-  if(advancedOpenIdx.hasOwnProperty(i))return advancedOpenIdx[i];
-  var it=items[i];
-  if(!it)return false;
-  return !!(it.fxOn||it.ppnOn||it.docImgSize||(it.docDescSize&&it.docDescSize!=='md'));
-}
-function toggleAdvanced(i){
-  advancedOpenIdx[i]=!isAdvancedOpen(i);
-  renderAll();
-}
-
 function renderAll(){
   var tb=document.getElementById('tbody');
   refreshSectionSelect();
@@ -2688,15 +2795,12 @@ function renderAll(){
     }
     totalBreakdown+='</div>';
 
-    // Advanced options — FX, PPN, and document display sizing. Collapsed
-    // by default to keep the row compact; auto-expanded if anything in
-    // here was already customized (see isAdvancedOpen).
+    // FX, PPN, and document display sizing — always visible inline.
     var fxChecked=it.fxOn?'checked':'';
     var ppnChecked=it.ppnOn?'checked':'';
     var fxRate=it.fxRate||18500;
     var fxCur=it.fxCurrency||'EUR';
     var rateId='ioc-r'+i, curId='ioc-c'+i, fxId='ioc-f'+i, ppnId='ioc-p'+i;
-    var advOpen=isAdvancedOpen(i);
     var imgSizeSelAdv=imgSrc?('<div class="ioc-row"><label class="doc-size-lbl-inline">Ukuran gambar</label>'
       +'<select class="ioc-sel" onchange="updateItemDocImgSize('+i+',this.value)">'
       +'<option value=""'+(!it.docImgSize?' selected':'')+'>Default</option>'
@@ -2710,11 +2814,7 @@ function renderAll(){
         return '<option value="'+k+'"'+((it.docDescSize||'md')===k?' selected':'')+'>'+DOC_DESC_SIZES[k].label+'</option>';
       }).join('')
     +'</select></div>';
-    var inlineControls='<button type="button" class="adv-toggle-btn" onclick="toggleAdvanced('+i+')" title="FX, PPN, ukuran gambar &amp; teks di dokumen">'
-        +'⚙ Opsi lanjutan'
-        +'<span class="adv-toggle-arrow">'+(advOpen?'▴':'▾')+'</span>'
-      +'</button>'
-      +'<div class="ioc" style="display:'+(advOpen?'flex':'none')+'">'
+    var inlineControls='<div class="ioc">'
       +'<div class="ioc-row">'
         +'<input type="checkbox" id="'+fxId+'" '+fxChecked+' onchange="syncFx('+i+')">'
         +'<label for="'+fxId+'">FX</label>'
