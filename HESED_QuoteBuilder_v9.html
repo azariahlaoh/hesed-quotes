@@ -90,6 +90,10 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .stock-low{background:#fff4e0;color:#a86400}
 .stock-out{background:#fdeceb;color:#c0392b}
 .stock-unknown{background:#f0f0f0;color:#999}
+.stock-hint{display:block;font-size:11.5px;font-weight:600;margin-top:5px}
+.stock-hint.stock-ok{background:none;padding:0;color:#2d7a3a}
+.stock-hint.stock-low{background:none;padding:0;color:#a86400}
+.stock-hint.stock-out{background:none;padding:0;color:#c0392b}
 .doc-custom-lbl{font-size:12px;color:#666;font-weight:600}
 .doc-custom-bar select{padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;color:var(--ink)}
 
@@ -651,6 +655,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
         <div class="field">
           <label>Selected</label>
           <input id="selected-prod-label" type="text" readonly placeholder="No product selected" style="background:#f5f5f5;color:#666;cursor:default">
+          <span id="selected-stock-hint" class="stock-hint"></span>
         </div>
         <div class="field"><label>Qty</label><input id="qty" type="number" value="1" min="1"></div>
         <button class="btn btn-dark" onclick="addCatalogItem()" id="add-btn" disabled style="opacity:.45">+ Add</button>
@@ -1464,14 +1469,25 @@ function loadDefaultProductImages(){
 let STOCK_LEVELS={};
 let stockLastUpdated=null;
 
+function stockStatusOf(qty){
+  if(qty<=0)return {cls:'stock-out',label:'Stok habis'};
+  if(qty<=5)return {cls:'stock-low',label:'Tersedia stok: '+qty+' tersisa'};
+  return {cls:'stock-ok',label:'Tersedia stok: '+qty+' tersisa'};
+}
+
 function stockBadgeHtml(code){
   if(!STOCK_LEVELS.hasOwnProperty(code))return '';
-  var qty=STOCK_LEVELS[code];
-  var cls,label;
-  if(qty<=0){cls='stock-out';label='Stok habis';}
-  else if(qty<=5){cls='stock-low';label='Stok: '+qty;}
-  else {cls='stock-ok';label='Stok: '+qty;}
-  return '<span class="stock-badge '+cls+'">'+label+'</span>';
+  var s=stockStatusOf(STOCK_LEVELS[code]);
+  var shortLabel=STOCK_LEVELS[code]<=0?'Stok habis':'Stok: '+STOCK_LEVELS[code];
+  return '<span class="stock-badge '+s.cls+'">'+shortLabel+'</span>';
+}
+
+// Shown right when a product is selected in Browse/Search — before it's
+// even added — so availability is visible while deciding, not just after.
+function stockMessageFor(code){
+  if(!STOCK_LEVELS.hasOwnProperty(code))return '';
+  var s=stockStatusOf(STOCK_LEVELS[code]);
+  return '<span class="stock-hint '+s.cls+'">'+s.label+'</span>';
 }
 
 function updateStockStatusText(){
@@ -2081,6 +2097,7 @@ function setCatalogMode(mode){
   selectedProd=null;
   document.getElementById('selected-prod-label').value='';
   document.getElementById('selected-prod-code').value='';
+  document.getElementById('selected-stock-hint').innerHTML='';
   document.getElementById('add-btn').disabled=true;
   document.getElementById('add-btn').style.opacity='.45';
 }
@@ -2088,6 +2105,7 @@ function setCatalogMode(mode){
 function clearSelection(){
   document.getElementById('selected-prod-code').value='';
   document.getElementById('selected-prod-label').value='';
+  document.getElementById('selected-stock-hint').innerHTML='';
   document.getElementById('add-btn').disabled=true;
   document.getElementById('add-btn').style.opacity='.45';
   selectedProd=null;
@@ -2119,6 +2137,7 @@ function onBrowsePick(){
   document.getElementById('selected-prod-code').value=p.code;
   var lbl=isSM?('IDR '+p.idrDirect.toLocaleString('id-ID')):(String.fromCharCode(8364)+p.price.toLocaleString());
   document.getElementById('selected-prod-label').value=p.code+' ('+lbl+')';
+  document.getElementById('selected-stock-hint').innerHTML=stockMessageFor(p.code);
   document.getElementById('add-btn').disabled=false;
   document.getElementById('add-btn').style.opacity='1';
   document.getElementById('add-opts').style.display='flex';
@@ -2192,6 +2211,7 @@ function pickProduct(i){
   document.getElementById('prod-search').value=p.code+' — '+p.desc.substring(0,48);
   document.getElementById('selected-prod-code').value=p.code;
   document.getElementById('selected-prod-label').value=p.code+' ('+lbl+')';
+  document.getElementById('selected-stock-hint').innerHTML=stockMessageFor(p.code);
   document.getElementById('add-btn').disabled=false;
   document.getElementById('add-btn').style.opacity='1';
   document.getElementById('add-opts').style.display='flex';
@@ -2203,6 +2223,7 @@ function clearSearch(){
   document.getElementById('search-clear').style.display='none';
   document.getElementById('selected-prod-code').value='';
   document.getElementById('selected-prod-label').value='';
+  document.getElementById('selected-stock-hint').innerHTML='';
   document.getElementById('add-btn').disabled=true;
   document.getElementById('add-btn').style.opacity='.45';
   selectedProd=null;
@@ -2379,6 +2400,7 @@ function addCatalogItem(){
   selectedProd=null;
   searchResults=[];
   document.getElementById('selected-prod-label').value='';
+  document.getElementById('selected-stock-hint').innerHTML='';
   document.getElementById('selected-prod-code').value='';
   document.getElementById('add-btn').disabled=true;
   document.getElementById('add-btn').style.opacity='.45';
@@ -3368,6 +3390,7 @@ function clearAll(){
   closeSearchDrop();
   selectedProd=null;searchResults=[];
   document.getElementById('selected-prod-label').value='';
+  document.getElementById('selected-stock-hint').innerHTML='';
   document.getElementById('selected-prod-code').value='';
   document.getElementById('add-btn').disabled=true;
   document.getElementById('add-btn').style.opacity='.45';
