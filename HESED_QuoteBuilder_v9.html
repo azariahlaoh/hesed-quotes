@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Parses uploaded stock spreadsheets (.xlsx/.csv) client-side — see uploadStockFile() -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
   --ink:#1a1a1a; --muted:#86868b; --border:#e5e5e7; --bg:#f5f5f7;
@@ -80,6 +82,14 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .qa-status{font-size:12px;flex:1;min-width:160px}
 .qa-ok{color:#2d7a3a}
 .qa-bad{color:#c0392b}
+
+/* Stock */
+.stock-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.stock-badge{display:inline-block;font-size:9.5px;font-weight:700;border-radius:4px;padding:1px 6px;margin-top:3px;letter-spacing:.02em}
+.stock-ok{background:#e8f4ea;color:#2d7a3a}
+.stock-low{background:#fff4e0;color:#a86400}
+.stock-out{background:#fdeceb;color:#c0392b}
+.stock-unknown{background:#f0f0f0;color:#999}
 .doc-custom-lbl{font-size:12px;color:#666;font-weight:600}
 .doc-custom-bar select{padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;color:var(--ink)}
 
@@ -179,7 +189,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
   padding:18mm 18mm 16mm;
   max-width:794px;
   margin:0 auto 24px;
-  font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-family:var(--font);
   font-size:10px;
   color:#111;
   position:relative;
@@ -545,6 +555,15 @@ td:nth-child(4),th:nth-child(4){text-align:center}
     </div>
   </div>
 
+  <div class="card" id="stock-card">
+    <h2>Stok barang (hanya terlihat di sini, tidak tercetak)</h2>
+    <div class="stock-row">
+      <input type="file" accept=".xlsx,.xls,.csv" id="stock-file-inp" onchange="onStockFileSelect(event)">
+      <span class="hint" id="stock-status">Belum ada data stok diunggah.</span>
+    </div>
+    <div class="hint">Unggah file Excel/CSV dengan kolom kode produk &amp; jumlah stok (urutan kolom bebas, boleh ada header atau tidak). Data stok tersimpan untuk semua yang pakai app ini &mdash; unggah ulang kapan saja untuk memperbarui.</div>
+  </div>
+
   <div class="card">
     <h2>Add product</h2>
     <div class="card-tabs">
@@ -677,19 +696,19 @@ td:nth-child(4),th:nth-child(4){text-align:center}
       </div>
       <!-- Same options panel for custom items -->
       <div class="item-opts" style="margin-top:8px">
-        <span class="item-opt-lbl">Options:</span>
-        <label class="item-opt-toggle">
-          <input type="checkbox" id="c-opt-fx-on" onchange="toggleCOptFx()"> Exchange rate
-        </label>
+        <span class="item-opt-lbl">Mata uang harga:</span>
+        <select class="item-opt-sel" id="c-price-currency" onchange="onCustomCurrencyChange()">
+          <option value="IDR" selected>IDR (harga di atas sudah final)</option>
+          <option value="EUR">EUR</option>
+          <option value="GBP">GBP</option>
+          <option value="USD">USD</option>
+        </select>
         <div id="c-opt-fx-fields" style="display:none;gap:6px;align-items:center">
-          <select class="item-opt-sel" id="c-opt-currency">
-            <option value="EUR">EUR</option>
-            <option value="GBP">GBP</option>
-            <option value="USD">USD</option>
-            <option value="IDR">IDR</option>
-          </select>
+          <span style="font-size:11px;color:#888">kurs ke IDR:</span>
           <input class="item-opt-inp" id="c-opt-rate" type="number" placeholder="rate" min="1" step="100" value="18500">
         </div>
+        <input type="checkbox" id="c-opt-fx-on" style="display:none">
+        <input type="hidden" id="c-opt-currency" value="IDR">
         <div class="item-opts-sep"></div>
         <label class="item-opt-toggle">
           <input type="checkbox" id="c-opt-ppn-on"> PPN 11%
@@ -1435,6 +1454,141 @@ function loadDefaultProductImages(){
     renderAll();
   }).catch(function(e){
     console.warn('Catalog photo manifest not available (offline, or file not deployed alongside the HTML):',e);
+  });
+}
+
+/* ---- Stock levels — Excel/CSV upload, shared via Supabase, Builder-only ----
+   Deliberately NOT shown in Preview/Print/Word export: this is internal
+   reference for whoever's building the quote, not part of the client-facing
+   document. */
+let STOCK_LEVELS={};
+let stockLastUpdated=null;
+
+function stockBadgeHtml(code){
+  if(!STOCK_LEVELS.hasOwnProperty(code))return '';
+  var qty=STOCK_LEVELS[code];
+  var cls,label;
+  if(qty<=0){cls='stock-out';label='Stok habis';}
+  else if(qty<=5){cls='stock-low';label='Stok: '+qty;}
+  else {cls='stock-ok';label='Stok: '+qty;}
+  return '<span class="stock-badge '+cls+'">'+label+'</span>';
+}
+
+function updateStockStatusText(){
+  var el=document.getElementById('stock-status');
+  if(!el)return;
+  var n=Object.keys(STOCK_LEVELS).length;
+  if(!n){el.textContent='Belum ada data stok diunggah.';return;}
+  var when=stockLastUpdated?new Date(stockLastUpdated).toLocaleString('id-ID'):'';
+  el.textContent=n+' produk ada data stok'+(when?' — terakhir diperbarui '+when:'')+'.';
+}
+
+function loadStockLevels(){
+  if(!historyConfigured())return;
+  fetch(SUPABASE_URL+'/rest/v1/stock?select=code,qty',{
+    headers:supabaseHeaders()
+  }).then(function(res){
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    return res.json();
+  }).then(function(rows){
+    var map={};
+    (rows||[]).forEach(function(r){ map[r.code]=r.qty; });
+    STOCK_LEVELS=map;
+    if(rows&&rows.length)stockLastUpdated=stockLastUpdated||new Date().toISOString();
+    updateStockStatusText();
+    renderAll();
+  }).catch(function(e){
+    console.warn('Stock levels not available:',e);
+  });
+}
+
+// Accepts rows as arrays-of-cells (SheetJS header:1 style). Tries to detect
+// header columns named like "code"/"kode"/"sku" and "stock"/"stok"/"qty";
+// falls back to column A = code, column B = qty if no header is recognized.
+function parseStockRows(rows){
+  if(!rows||!rows.length)return[];
+  var codeCol=0, qtyCol=1, startRow=0;
+  var first=rows[0].map(function(c){return String(c==null?'':c).toLowerCase().trim();});
+  var codeIdx=first.findIndex(function(c){return /kode|code|sku|produk|product/.test(c);});
+  var qtyIdx=first.findIndex(function(c){return /stok|stock|qty|jumlah|quantity/.test(c);});
+  if(codeIdx>=0||qtyIdx>=0){
+    codeCol=codeIdx>=0?codeIdx:0;
+    qtyCol=qtyIdx>=0?qtyIdx:1;
+    startRow=1;
+  }
+  var out=[];
+  for(var i=startRow;i<rows.length;i++){
+    var r=rows[i];
+    if(!r)continue;
+    var code=String(r[codeCol]==null?'':r[codeCol]).trim();
+    if(!code)continue;
+    var qty=parseFloat(r[qtyCol]);
+    if(isNaN(qty))continue;
+    out.push({code:code,qty:qty});
+  }
+  return out;
+}
+
+function onStockFileSelect(e){
+  var file=e.target.files&&e.target.files[0];
+  e.target.value='';
+  if(!file)return;
+  if(!historyConfigured()){
+    alert('Stok butuh koneksi Supabase yang sama dengan History — lihat tab History untuk setup.');
+    return;
+  }
+  if(typeof XLSX==='undefined'){
+    alert('Pustaka pembaca file belum termuat (butuh internet saat memuat halaman). Coba muat ulang halaman lalu coba lagi.');
+    return;
+  }
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      var wb=XLSX.read(ev.target.result,{type:'array'});
+      var sheet=wb.Sheets[wb.SheetNames[0]];
+      var rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});
+      var parsed=parseStockRows(rows);
+      if(!parsed.length){alert('Tidak ada baris kode + jumlah stok yang terbaca dari file ini.');return;}
+      uploadStockToSupabase(parsed);
+    }catch(err){
+      console.error('Gagal membaca file stok',err);
+      alert('Gagal membaca file. Pastikan formatnya .xlsx, .xls, atau .csv.');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function uploadStockToSupabase(rows){
+  var status=document.getElementById('stock-status');
+  if(status)status.textContent='Mengunggah stok…';
+  var now=new Date().toISOString();
+  var payload=rows.map(function(r){return {code:r.code, qty:r.qty, updated_at:now};});
+  // Full-snapshot replace — an uploaded stock sheet represents current
+  // totals, not an incremental add, so old rows are cleared first.
+  fetch(SUPABASE_URL+'/rest/v1/stock?code=not.is.null',{
+    method:'DELETE', headers:supabaseHeaders()
+  }).then(function(){
+    return fetch(SUPABASE_URL+'/rest/v1/stock',{
+      method:'POST',
+      headers:supabaseHeaders({'Prefer':'return=minimal'}),
+      body:JSON.stringify(payload)
+    });
+  }).then(function(res){
+    if(res.ok)return null;
+    return res.json().catch(function(){return null;}).then(function(b){
+      throw new Error(b&&b.message?b.message:('HTTP '+res.status));
+    });
+  }).then(function(){
+    var map={};
+    rows.forEach(function(r){map[r.code]=r.qty;});
+    STOCK_LEVELS=map;
+    stockLastUpdated=now;
+    updateStockStatusText();
+    renderAll();
+    alert('Stok berhasil diperbarui: '+rows.length+' produk.');
+  }).catch(function(e){
+    console.error('Upload stok gagal',e);
+    if(status)status.textContent='Gagal mengunggah stok: '+(e&&e.message||'kesalahan tidak diketahui');
   });
 }
 
@@ -2387,9 +2541,15 @@ function toggleOptDisc(){
   var on=document.getElementById('opt-disc-on').checked;
   document.getElementById('opt-disc-fields').style.display=on?'flex':'none';
 }
-function toggleCOptFx(){
-  var on=document.getElementById('c-opt-fx-on').checked;
-  document.getElementById('c-opt-fx-fields').style.display=on?'flex':'none';
+// Custom items: an explicit IDR-vs-foreign-currency choice, rather than a
+// generic "exchange rate" checkbox — IDR needs no conversion at all, which
+// is the common case for locally-priced custom items.
+function onCustomCurrencyChange(){
+  var cur=document.getElementById('c-price-currency').value;
+  var isForeign=cur!=='IDR';
+  document.getElementById('c-opt-fx-on').checked=isForeign;
+  document.getElementById('c-opt-currency').value=isForeign?cur:'IDR';
+  document.getElementById('c-opt-fx-fields').style.display=isForeign?'flex':'none';
 }
 function toggleCOptDisc(){
   var on=document.getElementById('c-opt-disc-on').checked;
@@ -2417,6 +2577,8 @@ function resetAddOpts(prefix){
   document.getElementById(prefix+'opt-disc-on').checked=false;
   document.getElementById(prefix+'opt-fx-fields').style.display='none';
   document.getElementById(prefix+'opt-disc-fields').style.display='none';
+  var curSel=document.getElementById(prefix+'price-currency');
+  if(curSel)curSel.value='IDR';
 }
 
 function updateItemFx(i,on,rate,cur){
@@ -2835,7 +2997,7 @@ function renderAll(){
     +'</div>';
 
     var rowHtml='<tr draggable="true" data-idx="'+i+'" ondragstart="dragStart(event,'+i+')" ondragover="dragOverRow(event)" ondragleave="dragLeaveRow(event)" ondrop="dropRow(event,'+i+')" ondragend="dragEndRow()">'
-      +'<td data-label="Produk"><span class="drag-grip" title="Geser untuk mengurutkan ulang">&#10247;</span><strong>'+it.code+'</strong><div style="font-size:10px;color:#aaa;margin-top:2px">'+it.series+'</div>'+badge+'</td>'
+      +'<td data-label="Produk"><span class="drag-grip" title="Geser untuk mengurutkan ulang">&#10247;</span><strong>'+it.code+'</strong><div style="font-size:10px;color:#aaa;margin-top:2px">'+it.series+'</div>'+badge+stockBadgeHtml(it.code)+'</td>'
       +'<td data-label="Gambar" style="text-align:center;vertical-align:top">'+imgCellHtml+'</td>'
       +'<td data-label="Deskripsi" style="vertical-align:top">'+descEditHtml+'</td>'
       +'<td data-label="Spesifikasi" style="vertical-align:top">'+specsEditHtml+'</td>'
@@ -3262,12 +3424,25 @@ function saveQuoteToHistory(){
     headers:supabaseHeaders({'Prefer':'resolution=merge-duplicates,return=minimal'}),
     body:JSON.stringify(record)
   }).then(function(res){
-    if(!res.ok)throw new Error('HTTP '+res.status);
-    setStatus('Saved ✓ ('+record.ref+')');
-    setTimeout(function(){setStatus('');},3000);
+    if(res.ok){
+      setStatus('Saved ✓ ('+record.ref+')');
+      setTimeout(function(){setStatus('');},3000);
+      return;
+    }
+    return res.json().catch(function(){return null;}).then(function(errBody){
+      throw new Error(errBody&&errBody.message?errBody.message:('HTTP '+res.status));
+    });
   }).catch(function(e){
     console.error('Save to history failed',e);
-    setStatus('Couldn\'t reach the cloud — check internet connection. (Quote is still safe in this tab.)');
+    // A server error (bad schema, RLS, etc.) is a different problem from no
+    // network at all — surface whatever detail we have instead of always
+    // blaming the internet connection.
+    var msg=(e&&e.message)||'kesalahan tidak diketahui';
+    var isNetworkErr=(e instanceof TypeError);
+    setStatus((isNetworkErr
+      ? 'Tidak bisa terhubung ke internet.'
+      : 'Gagal menyimpan (server): '+msg)
+      +' (Quote masih aman di tab ini.)');
   });
 }
 
@@ -3369,6 +3544,7 @@ function deleteQuoteFromHistory(ref){
 
 loadStoredProductImages();
 loadDefaultProductImages();
+loadStockLevels();
 filterProds();
 loadPersistedSeq();
 updateMemCount();
