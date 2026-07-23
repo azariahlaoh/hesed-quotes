@@ -26,6 +26,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:10
 .top-bar p{font-size:11.5px;color:#9a9a9e;margin-top:3px}
 .card{background:#fff;border-radius:var(--radius-lg);padding:22px;margin-bottom:16px;border:1px solid var(--border);box-shadow:var(--shadow-sm)}
 .card h2{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#aaa;margin-bottom:14px}
+.collapsible-hd{cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none}
+.collapsible-hd:hover{color:#888}
+.collapsible-hd span:last-child{font-size:12px;color:#ccc;transition:transform .15s}
 .card-tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px;margin-top:-4px}
 .card-tab{padding:9px 16px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;border-radius:6px 6px 0 0;transition:color .15s}
 .card-tab.active{color:var(--ink);border-bottom:2px solid var(--ink)}
@@ -287,7 +290,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .doc table tr:last-child td{border-bottom:none}
 .produk-name{font-size:11px;font-weight:700;color:#111;letter-spacing:-.01em;margin-bottom:1px}
 .produk-series{font-size:8px;color:#bbb;font-weight:400;text-transform:uppercase;letter-spacing:.05em}
-.img-ph{width:52px;height:40px;background:#f5f5f5;border:1px solid #eee;display:flex;align-items:center;justify-content:center;font-size:7px;color:#ccc;margin:0 auto;text-align:center;line-height:1.4}
+.img-ph{width:52px;height:40px;background:transparent;border:none;margin:0 auto}
 .prod-thumb{width:52px;height:40px;object-fit:contain;display:block;margin:0 auto}
 .spec-block{font-size:9px;color:#666;line-height:1.7;margin-top:4px;white-space:pre-line}
 
@@ -399,7 +402,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 @media print{
   body{background:#fff}
   .app{padding:0;max-width:none}
-  .top-bar,.tabs,.actions,.card,.print-actions{display:none!important}
+  .top-bar,.tabs,.actions,.card,.print-actions,.undo-toast,.crop-modal{display:none!important}
   .doc-wrap{background:#fff;padding:0;box-shadow:none;height:auto!important}
   #doc-scale-wrap{transform:none!important;width:auto!important;margin:0!important}
   /* Hide the per-section in-flow footers — fixed footer handles it */
@@ -470,6 +473,12 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .pb-saved{font-size:9px;color:#2d7a3a;background:#e8f4ea;border-radius:3px;padding:1px 5px;display:inline-block}
 
 /* Crop modal */
+.draft-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#fff8e6;border:1px solid #f0dca0;color:#7a5c00;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:12.5px}
+.draft-banner-actions{display:flex;gap:8px;flex-shrink:0}
+.undo-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:10000;background:var(--ink);color:#fff;padding:12px 16px;border-radius:10px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow-md);font-size:13px;max-width:90vw}
+.undo-toast-btn{background:none;border:1px solid rgba(255,255,255,.4);color:#fff;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.undo-toast-btn:hover{background:rgba(255,255,255,.15)}
+
 .crop-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;display:flex;align-items:center;justify-content:center;padding:16px}
 .crop-modal-card{background:#fff;border-radius:var(--radius-lg);padding:18px;max-width:520px;width:100%;box-shadow:var(--shadow-md)}
 .crop-modal-hd{font-size:14px;font-weight:700;margin-bottom:12px;color:var(--ink)}
@@ -503,6 +512,14 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 
 <!-- BUILDER -->
 <div class="pane active" id="pane-builder">
+
+  <div class="draft-banner" id="draft-restore-banner" style="display:none">
+    <span id="draft-restore-text"></span>
+    <span class="draft-banner-actions">
+      <button type="button" class="btn-sm btn-dark" onclick="restoreDraft()">Pulihkan</button>
+      <button type="button" class="btn-sm btn-outline" onclick="discardDraft()">Abaikan</button>
+    </span>
+  </div>
 
   <div class="card">
     <h2>Quote details</h2>
@@ -663,21 +680,24 @@ td:nth-child(4),th:nth-child(4){text-align:center}
       <!-- Item options: exchange rate, PPN, discount -->
       <div class="item-opts" id="add-opts" style="display:none">
         <span class="item-opt-lbl">Options:</span>
+        <span id="opt-sm-note" class="ppn-included-note" style="display:none">Harga Studiomaster sudah final (IDR, termasuk PPN) — FX &amp; PPN tidak berlaku</span>
+        <span id="opt-fx-ppn-wrap">
         <label class="item-opt-toggle">
-          <input type="checkbox" id="opt-fx-on" onchange="toggleOptFx()"> Exchange rate
+          <input type="checkbox" id="opt-fx-on" checked onchange="toggleOptFx()"> Exchange rate
         </label>
-        <div id="opt-fx-fields" style="display:none;gap:6px;align-items:center">
+        <div id="opt-fx-fields" style="display:flex;gap:6px;align-items:center">
           <select class="item-opt-sel" id="opt-currency">
             <option value="EUR">EUR</option>
             <option value="GBP">GBP</option>
             <option value="USD">USD</option>
           </select>
-          <input class="item-opt-inp" id="opt-rate" type="number" placeholder="rate" min="1" step="100" value="18500">
+          <input class="item-opt-inp" id="opt-rate" type="number" placeholder="rate" min="1" step="100" value="20000">
         </div>
         <div class="item-opts-sep"></div>
         <label class="item-opt-toggle">
-          <input type="checkbox" id="opt-ppn-on"> PPN 11%
+          <input type="checkbox" id="opt-ppn-on" checked> PPN 11%
         </label>
+        </span>
         <div class="item-opts-sep"></div>
         <label class="item-opt-toggle">
           <input type="checkbox" id="opt-disc-on" onchange="toggleOptDisc()"> Diskon
@@ -738,6 +758,15 @@ td:nth-child(4),th:nth-child(4){text-align:center}
         <option value="">(Umum)</option>
       </select>
       <button type="button" class="btn-sm btn-outline" onclick="addNewSection()">+ Bagian / Ruangan Baru</button>
+      <button type="button" class="btn-sm btn-outline" onclick="enterSectionReorderMode()" id="section-reorder-btn">&#8645; Urutkan halaman</button>
+    </div>
+    <div id="section-reorder-panel" style="display:none;margin-bottom:14px">
+      <div class="section-bar-lbl" style="display:block;margin-bottom:8px">Geser untuk mengurutkan halaman Daftar Barang di dokumen:</div>
+      <div id="section-reorder-list"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button type="button" class="btn-sm btn-dark" onclick="confirmSectionReorder()">Selesai</button>
+        <button type="button" class="btn-sm btn-outline" onclick="cancelSectionReorder()">Batal</button>
+      </div>
     </div>
     <table class="items-table">
       <thead><tr>
@@ -758,7 +787,11 @@ td:nth-child(4),th:nth-child(4){text-align:center}
   </div>
 
   <div class="card" id="custom-content-card">
-    <h2>Konten tambahan (di luar tabel harga)</h2>
+    <h2 class="collapsible-hd" onclick="toggleCustomContentCard()">
+      <span>Konten tambahan (di luar tabel harga)</span>
+      <span id="custom-content-arrow">&#9656;</span>
+    </h2>
+    <div id="custom-content-body" style="display:none">
     <div class="card-tabs">
       <button class="card-tab active" onclick="showBlockSubTab('image')">Gambar</button>
       <button class="card-tab" onclick="showBlockSubTab('text')">Teks</button>
@@ -810,6 +843,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
     <div id="blocks-list-wrap" style="margin-top:18px;display:none">
       <div class="section-bar-lbl" style="margin-bottom:8px;display:block">Urutan konten tambahan (geser untuk mengurutkan)</div>
       <div id="blocks-list"></div>
+    </div>
     </div>
   </div>
 
@@ -872,6 +906,12 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 </div>
 
 <!-- CROP MODAL -->
+<!-- UNDO TOAST -->
+<div class="undo-toast" id="undo-toast" style="display:none">
+  <span id="undo-toast-msg"></span>
+  <button type="button" class="undo-toast-btn" onclick="undoLastRemove()">Urungkan (Ctrl+Z)</button>
+</div>
+
 <div class="crop-modal" id="crop-modal" style="display:none">
   <div class="crop-modal-card">
     <div class="crop-modal-hd">Crop product photo</div>
@@ -1630,6 +1670,85 @@ let sectionList=[''];
 let dragSrcIdx=null;
 let dragSrcCtx=null;
 let customBlocks=[];
+
+/* ---- Background draft autosave (localStorage, this browser only) ----
+   Separate from "Save to history": this exists purely so an accidental tab
+   close/crash doesn't lose in-progress work — it saves quietly as you go,
+   keyed by whatever the quote number currently is. */
+const DRAFT_KEY='hesed_current_draft';
+let draftSaveTimer=null;
+let pendingDraft=null;
+
+function scheduleDraftSave(){
+  clearTimeout(draftSaveTimer);
+  draftSaveTimer=setTimeout(saveDraftNow,1200);
+}
+
+function saveDraftNow(){
+  try{
+    var draft={
+      ref:getRef(),
+      client:document.getElementById('client').value,
+      contact:document.getElementById('contact').value,
+      address:document.getElementById('address').value,
+      project:document.getElementById('project').value,
+      qt_date:document.getElementById('qt-date').value,
+      client_code:document.getElementById('client-code').value,
+      ref_override:document.getElementById('ref-override').value,
+      seq:getSeq(),
+      items:items,
+      section_list:sectionList,
+      custom_blocks:customBlocks,
+      saved_at:new Date().toISOString()
+    };
+    localStorage.setItem(DRAFT_KEY,JSON.stringify(draft));
+  }catch(e){}
+}
+
+function checkForDraftOnLoad(){
+  try{
+    var raw=localStorage.getItem(DRAFT_KEY);
+    if(!raw)return;
+    var draft=JSON.parse(raw);
+    if(!draft||!draft.items||!draft.items.length)return;
+    pendingDraft=draft;
+    var when=draft.saved_at?new Date(draft.saved_at).toLocaleString('id-ID'):'';
+    document.getElementById('draft-restore-text').textContent=
+      'Ditemukan draft belum tersimpan: '+(draft.ref||'quote')+' ('+draft.items.length+' produk)'+(when?', tersimpan '+when:'')+'.';
+    document.getElementById('draft-restore-banner').style.display='flex';
+  }catch(e){}
+}
+
+function restoreDraft(){
+  if(!pendingDraft)return;
+  var d=pendingDraft;
+  document.getElementById('client').value=d.client||'';
+  document.getElementById('contact').value=d.contact||'';
+  document.getElementById('address').value=d.address||'';
+  document.getElementById('project').value=d.project||'';
+  document.getElementById('qt-date').value=d.qt_date||'';
+  document.getElementById('client-code').value=d.client_code||'';
+  document.getElementById('ref-override').value=d.ref_override||'';
+  document.getElementById('seq-num').value=d.seq||1;
+  items=d.items||[];
+  sectionList=(d.section_list&&d.section_list.length)?d.section_list:[''];
+  customBlocks=d.custom_blocks||[];
+  updateRef();
+  refreshSectionSelect();
+  renderAll();
+  renderBlocksList();
+  dismissDraftBanner();
+}
+
+function discardDraft(){
+  try{localStorage.removeItem(DRAFT_KEY);}catch(e){}
+  dismissDraftBanner();
+}
+
+function dismissDraftBanner(){
+  document.getElementById('draft-restore-banner').style.display='none';
+  pendingDraft=null;
+}
 let selectedProd=null;
 let searchResults=[];
 let searchIdx=-1;
@@ -1641,16 +1760,68 @@ function escapeHtml(s){
 }
 
 function groupBySection(arr){
-  var order=[], map={};
+  var map={};
   arr.forEach(function(it){
     var key=it.section||'';
-    if(!(key in map)){map[key]=[];order.push(key);}
+    if(!(key in map))map[key]=[];
     map[key].push(it);
   });
+  // Page order follows sectionList (user-reorderable — see
+  // enterSectionReorderMode), not just first-appearance order in items.
+  var order=sectionList.filter(function(k){return k in map;});
+  Object.keys(map).forEach(function(k){ if(order.indexOf(k)<0)order.push(k); });
   return order.map(function(k){return {name:k, items:map[k]};});
 }
 
 function onSectionSelectChange(v){currentSection=v;}
+
+/* ---- Reorder Daftar Barang pages (drag the sectionList itself) ---- */
+var sectionReorderBackup=null;
+
+function enterSectionReorderMode(){
+  var used={};
+  items.forEach(function(it){used[it.section||'']=true;});
+  var activeCount=sectionList.filter(function(s){return used[s];}).length;
+  if(activeCount<2){alert('Cuma ada 1 halaman Daftar Barang — tidak ada yang perlu diurutkan.');return;}
+  sectionReorderBackup=sectionList.slice();
+  document.getElementById('section-reorder-btn').style.display='none';
+  document.getElementById('section-reorder-panel').style.display='block';
+  renderSectionReorderList();
+}
+
+function renderSectionReorderList(){
+  var used={};
+  items.forEach(function(it){used[it.section||'']=true;});
+  var wrap=document.getElementById('section-reorder-list');
+  wrap.innerHTML=sectionList.map(function(s,i){
+    var label=s?escapeHtml(s):'(Umum)';
+    var unused=!used[s]?' <span style="color:#bbb;font-size:10px">(tidak dipakai)</span>':'';
+    return '<div class="block-row" draggable="true" data-idx="'+i+'" '
+      +'ondragstart="dragStart(event,'+i+',\'sections\')" ondragover="dragOverRow(event)" '
+      +'ondragleave="dragLeaveRow(event)" ondrop="dropRow(event,'+i+',\'sections\')" ondragend="dragEndRow()">'
+      +'<span class="drag-grip" title="Geser untuk mengurutkan ulang">&#10247;</span>'
+      +'<div class="block-row-info"><div class="block-row-title">'+label+unused+'</div></div>'
+    +'</div>';
+  }).join('');
+}
+
+function confirmSectionReorder(){
+  sectionReorderBackup=null;
+  document.getElementById('section-reorder-panel').style.display='none';
+  document.getElementById('section-reorder-btn').style.display='inline-block';
+  renderAll();
+}
+
+function cancelSectionReorder(){
+  if(!sectionReorderBackup)return;
+  if(!confirm('Batalkan pengurutan? Urutan halaman akan dikembalikan seperti semula.'))return;
+  sectionList=sectionReorderBackup;
+  sectionReorderBackup=null;
+  document.getElementById('section-reorder-panel').style.display='none';
+  document.getElementById('section-reorder-btn').style.display='inline-block';
+  refreshSectionSelect();
+  renderAll();
+}
 
 function addNewSection(){
   var name=prompt('Nama bagian/ruangan baru (misal: Ruang Utama, Lobby, Ruang VIP):','');
@@ -1691,6 +1862,14 @@ function refreshBlockAfterSelects(){
     var stillValid=Array.prototype.some.call(el.options,function(o){return o.value===prev;});
     if(stillValid)el.value=prev;
   });
+}
+
+function toggleCustomContentCard(){
+  var body=document.getElementById('custom-content-body');
+  var arrow=document.getElementById('custom-content-arrow');
+  var open=body.style.display!=='none';
+  body.style.display=open?'none':'block';
+  arrow.innerHTML=open?'&#9656;':'&#9662;';
 }
 
 function showBlockSubTab(t){
@@ -1776,9 +1955,10 @@ function editBlock(id){
 function removeBlock(id){
   var idx=customBlocks.findIndex(function(b){return b.id===id;});
   if(idx<0)return;
-  if(!confirm('Hapus konten ini?'))return;
+  lastRemoved={type:'block', index:idx, data:customBlocks[idx]};
   customBlocks.splice(idx,1);
   renderBlocksList();
+  showUndoToast('Konten tambahan dihapus.');
 }
 
 function afterKeyLabel(key){
@@ -1837,16 +2017,18 @@ function dragLeaveRow(e){
 function dropRow(e,i,ctx){
   ctx=ctx||'items';
   e.preventDefault();
-  document.querySelectorAll('#tbody tr,#blocks-list .block-row').forEach(function(r){r.classList.remove('drag-over');});
+  document.querySelectorAll('#tbody tr,#blocks-list .block-row,#section-reorder-list .block-row').forEach(function(r){r.classList.remove('drag-over');});
   if(dragSrcIdx===null||dragSrcCtx!==ctx||dragSrcIdx===i){dragSrcIdx=null;dragSrcCtx=null;return;}
-  var arr=ctx==='blocks'?customBlocks:items;
+  var arr=ctx==='blocks'?customBlocks:(ctx==='sections'?sectionList:items);
   var moved=arr.splice(dragSrcIdx,1)[0];
   arr.splice(i,0,moved);
   dragSrcIdx=null;dragSrcCtx=null;
-  if(ctx==='blocks')renderBlocksList(); else renderAll();
+  if(ctx==='blocks')renderBlocksList();
+  else if(ctx==='sections')renderSectionReorderList();
+  else renderAll();
 }
 function dragEndRow(){
-  document.querySelectorAll('#tbody tr,#blocks-list .block-row').forEach(function(r){r.classList.remove('drag-over','dragging');});
+  document.querySelectorAll('#tbody tr,#blocks-list .block-row,#section-reorder-list .block-row').forEach(function(r){r.classList.remove('drag-over','dragging');});
   dragSrcIdx=null;dragSrcCtx=null;
 }
 
@@ -2141,6 +2323,17 @@ function onBrowsePick(){
   document.getElementById('add-btn').disabled=false;
   document.getElementById('add-btn').style.opacity='1';
   document.getElementById('add-opts').style.display='flex';
+  updateSmOptsVisibility(isSM);
+}
+
+// Studiomaster prices are already final IDR incl. PPN — hide the FX/PPN
+// controls entirely for those so there's nothing confusing to toggle.
+function updateSmOptsVisibility(isSM){
+  var note=document.getElementById('opt-sm-note');
+  var wrap=document.getElementById('opt-fx-ppn-wrap');
+  if(!note||!wrap)return;
+  note.style.display=isSM?'inline':'none';
+  wrap.style.display=isSM?'none':'inline';
 }
 
 function searchProducts(q){
@@ -2215,6 +2408,7 @@ function pickProduct(i){
   document.getElementById('add-btn').disabled=false;
   document.getElementById('add-btn').style.opacity='1';
   document.getElementById('add-opts').style.display='flex';
+  updateSmOptsVisibility(sm);
   closeSearchDrop();
 }
 
@@ -2293,6 +2487,7 @@ function onClientFieldEdit(){
   document.getElementById('client-actions').style.display='flex';
   document.getElementById('client-saved-badge').style.display='none';
   updateMemCount();
+  scheduleDraftSave();
 }
 
 function saveClient(){
@@ -2350,33 +2545,28 @@ function fmt(n){return 'IDR'+Math.round(n).toLocaleString('id-ID');}
 function addProductToItems(p,qty,opts){
   var isSM=p.series&&p.series.indexOf('SM-')===0;
   opts=opts||{fxOn:false,fxRate:0,fxCurrency:'',ppnOn:false,itemDisc:0};
-  if(isSM)opts.ppnOn=false;
-  var ex=items.find(function(i){return i.code===p.code && (i.section||'')===currentSection;});
-  if(ex){
-    // merge qty, but also apply whatever FX/PPN/discount was just picked —
-    // otherwise those choices would be silently discarded.
-    ex.qty+=qty;
-    ex.fxOn=opts.fxOn; ex.fxRate=opts.fxRate; ex.fxCurrency=opts.fxCurrency;
-    ex.ppnOn=opts.ppnOn; ex.itemDisc=opts.itemDisc;
-  }
-  else {
-    var catPrice=isSM?p.idrDirect:p.price;
-    items.push({
-      code:p.code,
-      displayName:isSM?p.code:(PROD_DISPLAY[p.code]||('TWAUDiO '+p.code)),
-      series:p.series,
-      desc:p.desc,
-      catalogPrice:catPrice,
-      eurPrice:null, idrPrice:null, idrDirect:null,
-      qty:qty,
-      specs:SPECS[p.code]||'',
-      custom:false,
-      section:currentSection,
-      includesPPN:!!isSM,
-      fxOn:opts.fxOn, fxRate:opts.fxRate, fxCurrency:opts.fxCurrency,
-      ppnOn:opts.ppnOn, itemDisc:opts.itemDisc
-    });
-  }
+  // Studiomaster prices are already final IDR (incl. PPN) — FX/PPN never apply.
+  if(isSM){ opts.ppnOn=false; opts.fxOn=false; opts.fxRate=0; opts.fxCurrency=''; }
+  // Adding the same product again always creates a new line, even in the
+  // same section — some quotes genuinely need the same product listed
+  // separately (different pricing/notes per line), so nothing is merged.
+  var catPrice=isSM?p.idrDirect:p.price;
+  items.push({
+    code:p.code,
+    displayName:isSM?p.code:(PROD_DISPLAY[p.code]||('TWAUDiO '+p.code)),
+    series:p.series,
+    desc:p.desc,
+    catalogPrice:catPrice,
+    eurPrice:null, idrPrice:null, idrDirect:null,
+    qty:qty,
+    specs:SPECS[p.code]||'',
+    custom:false,
+    section:currentSection,
+    includesPPN:!!isSM,
+    fxOn:opts.fxOn, fxRate:opts.fxRate, fxCurrency:opts.fxCurrency,
+    ppnOn:opts.ppnOn, itemDisc:opts.itemDisc,
+    docImgSize:'lg', docDescSize:'md'
+  });
 }
 
 function addCatalogItem(){
@@ -2512,13 +2702,7 @@ function addCustomItem(){
   if(!desc){alert('Please enter a description.');return;}
   if(!price||price<=0){alert('Please enter a price.');return;}
   var opts=getAddOpts('c-');
-  var ex=items.find(function(i){return i.code===code && (i.section||'')===currentSection;});
-  if(ex){
-    ex.qty+=qty;
-    ex.fxOn=opts.fxOn; ex.fxRate=opts.fxRate; ex.fxCurrency=opts.fxCurrency;
-    ex.ppnOn=opts.ppnOn; ex.itemDisc=opts.itemDisc;
-  }
-  else items.push({
+  items.push({
     code:code,displayName:code,series:'Custom',desc:desc,
     catalogPrice:price,
     eurPrice:null,idrPrice:null,idrDirect:null,
@@ -2526,7 +2710,8 @@ function addCustomItem(){
     section:currentSection,
     includesPPN:false,
     fxOn:opts.fxOn,fxRate:opts.fxRate,fxCurrency:opts.fxCurrency,
-    ppnOn:opts.ppnOn,itemDisc:opts.itemDisc
+    ppnOn:opts.ppnOn,itemDisc:opts.itemDisc,
+    docImgSize:'lg', docDescSize:'md'
   });
   ['c-code','c-desc','c-price'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('c-qty').value='1';
@@ -2594,13 +2779,18 @@ function getAddOpts(prefix){
 
 function resetAddOpts(prefix){
   prefix=prefix||'';
-  document.getElementById(prefix+'opt-fx-on').checked=false;
-  document.getElementById(prefix+'opt-ppn-on').checked=false;
+  // Catalog (TW Audio) adds default back to FX+PPN checked — that's the
+  // common case. Custom items default the other way (plain IDR).
+  var isCatalog=(prefix==='');
+  document.getElementById(prefix+'opt-fx-on').checked=isCatalog;
+  document.getElementById(prefix+'opt-ppn-on').checked=isCatalog;
   document.getElementById(prefix+'opt-disc-on').checked=false;
-  document.getElementById(prefix+'opt-fx-fields').style.display='none';
+  document.getElementById(prefix+'opt-fx-fields').style.display=isCatalog?'flex':'none';
+  if(isCatalog)document.getElementById(prefix+'opt-rate').value=20000;
   document.getElementById(prefix+'opt-disc-fields').style.display='none';
   var curSel=document.getElementById(prefix+'price-currency');
   if(curSel)curSel.value='IDR';
+  if(isCatalog)updateSmOptsVisibility(false);
 }
 
 function updateItemFx(i,on,rate,cur){
@@ -2621,7 +2811,50 @@ function updateItemPpn(i,on){
   items[i].ppnOn=on;
   renderAll();
 }
-function removeItem(i){items.splice(i,1);renderAll();}
+let lastRemoved=null; // {type:'item'|'block', index, data}
+
+function removeItem(i){
+  lastRemoved={type:'item', index:i, data:items[i]};
+  items.splice(i,1);
+  renderAll();
+  showUndoToast('Produk dihapus.');
+}
+
+function undoLastRemove(){
+  if(!lastRemoved)return;
+  if(lastRemoved.type==='item'){
+    items.splice(Math.min(lastRemoved.index,items.length),0,lastRemoved.data);
+    renderAll();
+  } else if(lastRemoved.type==='block'){
+    customBlocks.splice(Math.min(lastRemoved.index,customBlocks.length),0,lastRemoved.data);
+    renderBlocksList();
+  }
+  lastRemoved=null;
+  hideUndoToast();
+}
+
+function showUndoToast(msg){
+  var t=document.getElementById('undo-toast');
+  if(!t)return;
+  document.getElementById('undo-toast-msg').textContent=msg;
+  t.style.display='flex';
+  clearTimeout(showUndoToast._timer);
+  showUndoToast._timer=setTimeout(hideUndoToast,6000);
+}
+function hideUndoToast(){
+  var t=document.getElementById('undo-toast');
+  if(t)t.style.display='none';
+}
+
+// Ctrl+Z (outside text fields, so native undo still works while typing)
+// undoes the last removed product/content block.
+document.addEventListener('keydown',function(e){
+  if((e.ctrlKey||e.metaKey)&&(e.key==='z'||e.key==='Z')){
+    var tag=(document.activeElement&&document.activeElement.tagName||'').toLowerCase();
+    if(tag==='input'||tag==='textarea')return;
+    if(lastRemoved){ e.preventDefault(); undoLastRemove(); }
+  }
+});
 function updateQty(i,v){items[i].qty=parseInt(v)||1;renderAll();}
 
 function updateItemDesc(i,v){items[i].desc=v;}
@@ -2889,9 +3122,16 @@ function updateItemDisc(i,v){
   renderAll();
 }
 
+function updateItemCatalogPrice(i,v){
+  if(!items[i])return;
+  items[i].catalogPrice=Math.max(0,parseFloat(v)||0);
+  renderAll();
+}
+
 function renderAll(){
   var tb=document.getElementById('tbody');
   refreshSectionSelect();
+  scheduleDraftSave();
   if(!items.length){
     tb.innerHTML='<tr><td colspan="9" class="empty-state">Belum ada produk \u2014 tambahkan di atas</td></tr>';
     updateTots();return;
@@ -2937,7 +3177,13 @@ function renderAll(){
     var catP=it.catalogPrice!=null?it.catalogPrice:u;
     var fxCur=it.fxOn&&it.fxCurrency?it.fxCurrency:'';
     var hasAnyCalc=it.fxOn||it.ppnOn||effPct>0||it.includesPPN;
-    var unitBreakdown='<div class="pb">';
+    // Custom items can have their base price edited after adding — the
+    // price was hand-typed in the first place, so there's no catalog
+    // list to protect the way there is for catalog products.
+    var priceEditHtml=it.custom
+      ?'<input class="ioc-inp" style="width:100%;margin-bottom:4px;text-align:right" type="number" value="'+catP+'" min="0" step="1000" onchange="updateItemCatalogPrice('+i+',this.value)" title="Edit harga dasar">'
+      :'';
+    var unitBreakdown='<div class="pb">'+priceEditHtml;
 
     if(!hasAnyCalc){
       // Nothing applied yet — show raw catalog number with currency, no IDR formatting
@@ -3000,20 +3246,20 @@ function renderAll(){
     +'</select></div>';
     var inlineControls='<div class="ioc">'
       +'<div class="ioc-row">'
-        +'<input type="checkbox" id="'+fxId+'" '+fxChecked+' onchange="syncFx('+i+')">'
-        +'<label for="'+fxId+'">FX</label>'
-        +'<select class="ioc-sel" id="'+curId+'" onchange="syncFx('+i+')">'
-          +'<option value="EUR"'+(fxCur==='EUR'?' selected':'')+'>EUR</option>'
-          +'<option value="GBP"'+(fxCur==='GBP'?' selected':'')+'>GBP</option>'
-          +'<option value="USD"'+(fxCur==='USD'?' selected':'')+'>USD</option>'
-        +'</select>'
-        +'<input class="ioc-inp" id="'+rateId+'" type="number" value="'+fxRate+'" placeholder="rate" step="100" onchange="syncFx('+i+')">'
-      +'</div>'
-      +'<div class="ioc-row">'
         +(it.includesPPN
-          ? '<span class="ppn-included-note">PPN 11% sudah termasuk dalam harga</span>'
-          : '<input type="checkbox" id="'+ppnId+'" '+ppnChecked+' onchange="updateItemPpn('+i+',this.checked)"><label for="'+ppnId+'">PPN 11%</label>')
+          ? '<span class="ppn-included-note">Harga sudah final (IDR, termasuk PPN) — FX &amp; PPN tidak berlaku</span>'
+          : '<input type="checkbox" id="'+fxId+'" '+fxChecked+' onchange="syncFx('+i+')">'
+            +'<label for="'+fxId+'">FX</label>'
+            +'<select class="ioc-sel" id="'+curId+'" onchange="syncFx('+i+')">'
+              +'<option value="EUR"'+(fxCur==='EUR'?' selected':'')+'>EUR</option>'
+              +'<option value="GBP"'+(fxCur==='GBP'?' selected':'')+'>GBP</option>'
+              +'<option value="USD"'+(fxCur==='USD'?' selected':'')+'>USD</option>'
+            +'</select>'
+            +'<input class="ioc-inp" id="'+rateId+'" type="number" value="'+fxRate+'" placeholder="rate" step="100" onchange="syncFx('+i+')">')
       +'</div>'
+      +(it.includesPPN?'':'<div class="ioc-row">'
+        +'<input type="checkbox" id="'+ppnId+'" '+ppnChecked+' onchange="updateItemPpn('+i+',this.checked)"><label for="'+ppnId+'">PPN 11%</label>'
+      +'</div>')
       +imgSizeSelAdv
       +descSizeSelAdv
     +'</div>';
@@ -3178,7 +3424,7 @@ function buildDoc(){
       var thumbStyle='width:'+itemImgCfg.imgW+'px;height:'+itemImgCfg.imgH+'px';
       var imgCell=imgSrc2
         ?'<img src="'+imgSrc2+'" class="prod-thumb" style="'+thumbStyle+'">'
-        :'<div class="img-ph" style="'+thumbStyle+'">Gambar</div>';
+        :'<div class="img-ph" style="'+thumbStyle+'"></div>';
       var descCfg=DOC_DESC_SIZES[it.docDescSize]||DOC_DESC_SIZES.md;
       var descStyle='font-size:'+descCfg.fontSize+(descCfg.bold?';font-weight:700':'');
       var deskPct=46-(gambarPct-8); // keep the row's columns summing to 100%
@@ -3293,8 +3539,10 @@ function buildDoc(){
     var gambarPct = DOC_IMG_SIZES[sectionMaxImgSizeKey(g.items)].colPct;
     var rowsHtml = buildRowsHtml(g.items,gambarPct);
     var subtotal = g.items.reduce(function(s,it){return s+unitFinal(it)*it.qty;},0);
-    var subtotalsHtml = isLast ? totalsHtml
-      : '<div class="doc-tot-sub"><span class="lbl">Subtotal'+(g.name?' &mdash; '+escapeHtml(g.name):'')+'</span><span class="amt">'+fmt(Math.round(subtotal))+'</span></div>';
+    var subtotalLineHtml = '<div class="doc-tot-sub"><span class="lbl">Subtotal'+(g.name?' &mdash; '+escapeHtml(g.name):'')+'</span><span class="amt">'+fmt(Math.round(subtotal))+'</span></div>';
+    // Last page shows its own subtotal AND the grand total together, so
+    // the recap reads top-to-bottom instead of only showing the final sum.
+    var subtotalsHtml = isLast ? (subtotalLineHtml + totalsHtml) : subtotalLineHtml;
 
     pageContents.push(
       pageHdr()
@@ -3374,6 +3622,7 @@ window.addEventListener('resize',function(){
 
 function clearAll(){
   if(items.length&&!confirm('Clear everything and start over?'))return;
+  try{localStorage.removeItem(DRAFT_KEY);}catch(e){}
   items=[];
   currentSection='';
   sectionList=[''];
@@ -3572,6 +3821,7 @@ filterProds();
 loadPersistedSeq();
 updateMemCount();
 refreshSectionSelect();
+checkForDraftOnLoad();
 </script>
 </body>
 </html>
