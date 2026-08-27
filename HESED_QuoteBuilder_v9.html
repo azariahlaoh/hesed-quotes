@@ -548,7 +548,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
       </div>
       <div class="field" style="width:150px;flex-shrink:0">
         <label>Kurs (berlaku ke semua)</label>
-        <input id="global-fx-rate" type="number" min="1" step="100" value="20000" oninput="onGlobalFxRateChange(this.value)">
+        <input id="global-fx-rate" type="number" min="1" step="100" value="20700" oninput="onGlobalFxRateChange(this.value)">
       </div>
     </div>
 
@@ -695,7 +695,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
             <option value="GBP">GBP</option>
             <option value="USD">USD</option>
           </select>
-          <span class="hint" id="opt-rate-hint" style="margin-top:0">&times; kurs 20000</span>
+          <span class="hint" id="opt-rate-hint" style="margin-top:0">&times; kurs 20700</span>
         </div>
         <div class="item-opts-sep"></div>
         <label class="item-opt-toggle">
@@ -733,7 +733,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
           <option value="USD">USD</option>
         </select>
         <div id="c-opt-fx-fields" style="display:none;gap:6px;align-items:center">
-          <span class="hint" id="c-opt-rate-hint" style="margin-top:0">kurs ke IDR: 20000</span>
+          <span class="hint" id="c-opt-rate-hint" style="margin-top:0">kurs ke IDR: 20700</span>
         </div>
         <input type="checkbox" id="c-opt-fx-on" style="display:none">
         <input type="hidden" id="c-opt-currency" value="IDR">
@@ -2244,10 +2244,10 @@ function loadPersistedSeq(){
 
 /* ---- Global exchange rate — one shared "Kurs" for every FX-enabled item,
    instead of typing a rate in per product. ---- */
-let globalFxRate=20000;
+let globalFxRate=20700;
 
 function onGlobalFxRateChange(v){
-  globalFxRate=Math.max(1,parseFloat(v)||20000);
+  globalFxRate=Math.max(1,parseFloat(v)||20700);
   try{localStorage.setItem('hesed_fx_rate',globalFxRate);}catch(e){}
   // Live-update every item that already has FX on, plus the little rate
   // hints shown in the Add panels — "one rate for everything" means
@@ -2266,7 +2266,7 @@ function updateFxRateHints(){
 function loadPersistedFxRate(){
   try{
     const s=localStorage.getItem('hesed_fx_rate');
-    if(s){globalFxRate=parseFloat(s)||20000;}
+    if(s){globalFxRate=parseFloat(s)||20700;}
   }catch(e){}
   document.getElementById('global-fx-rate').value=globalFxRate;
   updateFxRateHints();
