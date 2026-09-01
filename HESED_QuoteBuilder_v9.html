@@ -397,6 +397,63 @@ td:nth-child(4),th:nth-child(4){text-align:center}
   .desc-edit,.specs-edit{resize:none}
 }
 
+/* ── Kiosk-style mobile product browsing (Browse mode on phones) ─── */
+.kiosk-browse{display:none}
+.kiosk-search-wrap{margin-bottom:10px}
+.kiosk-search-inp{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:12px;font-size:15px;font-family:inherit;background:#fbfbfc;min-height:46px}
+.kiosk-search-inp:focus{outline:none;border-color:#1a1a1a;background:#fff;box-shadow:0 0 0 4px rgba(26,26,26,.07)}
+.kiosk-chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:4px;-webkit-overflow-scrolling:touch}
+.kiosk-chips::-webkit-scrollbar{display:none}
+.kiosk-chip{flex:0 0 auto;padding:9px 16px;border-radius:20px;border:1px solid var(--border);background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.03);font-size:12.5px;font-weight:600;color:#555;cursor:pointer;white-space:nowrap;transition:transform .1s}
+.kiosk-chip:active{transform:scale(.96)}
+.kiosk-chip.active{background:linear-gradient(135deg,#2a2a2e 0%,#131315 100%);border-color:#131315;color:#fff;box-shadow:0 4px 10px rgba(0,0,0,.18)}
+.kiosk-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+.kiosk-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:12px;cursor:pointer;box-shadow:0 6px 16px rgba(20,20,24,.07),0 1px 3px rgba(20,20,24,.05);transition:transform .1s}
+.kiosk-card:active{transform:scale(.97)}
+.kiosk-card-thumb{position:relative;height:96px;border-radius:12px;background:radial-gradient(circle at 50% 35%,#ffffff 0%,#f5f6f8 100%);display:flex;align-items:center;justify-content:center;margin-bottom:8px;overflow:hidden}
+.kiosk-card-thumb img{max-width:82%;max-height:82%;object-fit:contain}
+.kiosk-noimg{font-size:22px;opacity:.35}
+.kiosk-card-thumb .stock-badge{position:absolute;top:5px;right:5px;font-size:8.5px;padding:3px 6px}
+.kiosk-card-code{font-size:13px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.kiosk-card-desc{font-size:11px;color:#8a8a8f;margin-top:2px;line-height:1.35;min-height:28px}
+.kiosk-card-price{font-size:12px;font-weight:700;color:#1a1a1a;margin-top:6px}
+.kiosk-empty-hint{grid-column:1/-1;text-align:center;color:#999;font-size:12.5px;padding:30px 10px}
+
+.kiosk-sheet-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:998;opacity:0;transition:opacity .18s}
+.kiosk-sheet-backdrop.open{display:block;opacity:1}
+.kiosk-sheet{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(180deg,#ffffff 0%,#fafafb 100%);border-radius:22px 22px 0 0;box-shadow:0 -18px 44px rgba(0,0,0,.24);z-index:999;max-height:86vh;overflow-y:auto;transform:translateY(100%);transition:transform .22s ease;padding-bottom:env(safe-area-inset-bottom,0)}
+.kiosk-sheet.open{transform:translateY(0)}
+.kiosk-sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:10px auto 4px}
+.kiosk-sheet-close{position:absolute;top:10px;right:14px;width:28px;height:28px;border-radius:50%;background:#f0f0f2;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;color:#666;cursor:pointer;z-index:2}
+.kiosk-sheet-body{padding:6px 18px 20px}
+.kiosk-sheet-head{display:flex;gap:14px;align-items:flex-start;padding:10px 0 16px;border-bottom:1px solid #f0f0f0}
+.kiosk-sheet-thumb{width:78px;height:78px;background:radial-gradient(circle at 50% 35%,#ffffff 0%,#f5f6f8 100%);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:8px;box-shadow:0 2px 6px rgba(20,20,24,.06)}
+.kiosk-sheet-thumb img{max-width:100%;max-height:100%;object-fit:contain}
+.kiosk-sheet-code{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.kiosk-sheet-series{font-size:10.5px;color:#a0a0a5;text-transform:uppercase;letter-spacing:.04em;font-weight:600;margin-top:2px}
+.kiosk-sheet-desc{font-size:12px;color:#6b6b70;line-height:1.5;margin-top:4px}
+.kiosk-qty-row{display:flex;align-items:center;justify-content:space-between;padding:16px 0}
+.kiosk-qty-lbl{font-size:13px;font-weight:600}
+.kiosk-qty-stepper{display:flex;align-items:center;gap:16px;background:linear-gradient(180deg,#f8f8fa 0%,#edeff2 100%);border-radius:12px;padding:8px 16px;box-shadow:inset 0 1px 2px rgba(0,0,0,.04)}
+.kiosk-qty-btn{width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#1a1a1a;cursor:pointer;user-select:none}
+.kiosk-qty-btn-dark{background:linear-gradient(135deg,#2a2a2e 0%,#131315 100%);color:#fff;box-shadow:0 3px 8px rgba(0,0,0,.22)}
+.kiosk-qty-val{font-size:16px;font-weight:700;min-width:16px;text-align:center}
+.kiosk-chip-row{display:flex;gap:8px;flex-wrap:wrap;padding-bottom:16px}
+.kiosk-toggle-chip{display:flex;align-items:center;gap:6px;background:#f0f0f2;color:#8a8a8f;font-size:11.5px;font-weight:600;padding:8px 14px;border-radius:20px;cursor:pointer}
+.kiosk-toggle-chip.active{background:linear-gradient(135deg,#2a2a2e 0%,#131315 100%);color:#fff;box-shadow:0 3px 8px rgba(0,0,0,.18)}
+.kiosk-sm-note{font-size:11.5px;color:#8a8a8f;background:#f5f5f7;border-radius:10px;padding:10px 12px;margin-bottom:14px}
+.kiosk-price-box{background:linear-gradient(180deg,#fbfbfc 0%,#f3f4f6 100%);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:7px;margin-bottom:16px;box-shadow:inset 0 1px 2px rgba(0,0,0,.03)}
+.kiosk-price-row{display:flex;justify-content:space-between;font-size:12px;color:#6b6b70}
+.kiosk-price-sep{height:1px;background:#e9e9eb;margin:2px 0}
+.kiosk-price-total{font-size:13.5px;font-weight:700;color:#1a1a1a}
+.kiosk-add-btn{background:linear-gradient(135deg,#29292d 0%,#0f0f11 100%);color:#fff;font-size:14.5px;font-weight:700;border-radius:12px;padding:15px;text-align:center;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.25)}
+.kiosk-add-btn:active{transform:scale(.98)}
+@media (max-width:760px){
+  #mode-browse.active ~ #shared-add-row-wrap{display:none}
+  #mode-browse .browse-grid{display:none}
+  #mode-browse .kiosk-browse{display:block}
+}
+
 /* ── PRINT ───────────────────────────────────────────────────── */
 @page{size:A4;margin:0}
 @media print{
@@ -643,6 +700,20 @@ td:nth-child(4),th:nth-child(4){text-align:center}
           </div>
         </div>
         <div class="browse-eur" id="browse-eur"></div>
+
+        <!-- Kiosk-style card grid — mobile only, self-service ordering flow -->
+        <div class="kiosk-browse" id="kiosk-browse">
+          <div class="kiosk-search-wrap">
+            <input type="text" id="kiosk-search" class="kiosk-search-inp" placeholder="Cari produk... (kode, nama, spek)" oninput="kioskRenderGrid()" autocomplete="off">
+          </div>
+          <div class="kiosk-chips" id="kiosk-chips">
+            <button type="button" class="kiosk-chip active" onclick="kioskSetCategory('',this)">Semua</button>
+            <button type="button" class="kiosk-chip" onclick="kioskSetCategory('tw',this)">TW Audio</button>
+            <button type="button" class="kiosk-chip" onclick="kioskSetCategory('install',this)">TW Install</button>
+            <button type="button" class="kiosk-chip" onclick="kioskSetCategory('sm',this)">Studiomaster</button>
+          </div>
+          <div class="kiosk-grid" id="kiosk-grid"></div>
+        </div>
       </div>
 
       <!-- SEARCH MODE -->
@@ -751,6 +822,14 @@ td:nth-child(4),th:nth-child(4){text-align:center}
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- Kiosk product sheet — opened from a tapped card in Browse mode on mobile -->
+  <div class="kiosk-sheet-backdrop" id="kiosk-sheet-backdrop" onclick="kioskCloseSheet()"></div>
+  <div class="kiosk-sheet" id="kiosk-sheet">
+    <div class="kiosk-sheet-close" onclick="kioskCloseSheet()">&times;</div>
+    <div class="kiosk-sheet-handle"></div>
+    <div class="kiosk-sheet-body" id="kiosk-sheet-body"></div>
   </div>
 
   <div class="card">
@@ -2319,6 +2398,188 @@ function setCatalogMode(mode){
   document.getElementById('selected-stock-hint').innerHTML='';
   document.getElementById('add-btn').disabled=true;
   document.getElementById('add-btn').style.opacity='.45';
+  if(mode==='browse')kioskRenderGrid();
+}
+
+/* ── Kiosk-style mobile card grid (Browse mode) ──────────────────────
+   Drives the same hidden shared controls (#qty, #opt-fx-on, #opt-ppn-on,
+   selectedProd…) that the desktop dropdown flow uses, then hands off to
+   the existing addCatalogItem() — no separate add path to keep in sync. */
+let kioskCategory='';
+function kioskCatOf(series){
+  if(!series)return '';
+  if(series.indexOf('SM-')===0)return 'sm';
+  if(series.indexOf('Install')!==-1||series.indexOf('ARiA')!==-1)return 'install';
+  return 'tw';
+}
+function kioskSetCategory(cat,btn){
+  kioskCategory=cat;
+  document.querySelectorAll('.kiosk-chip').forEach(function(b){b.classList.remove('active');});
+  if(btn)btn.classList.add('active');
+  kioskRenderGrid();
+}
+function kioskRenderGrid(){
+  var grid=document.getElementById('kiosk-grid');
+  if(!grid)return;
+  var qEl=document.getElementById('kiosk-search');
+  var q=qEl?qEl.value.toLowerCase().trim():'';
+  var list=PRODUCTS.filter(function(p){
+    if(kioskCategory&&kioskCatOf(p.series)!==kioskCategory)return false;
+    if(q){
+      var hay=(p.code+' '+p.desc+' '+(p.series||'')).toLowerCase();
+      if(hay.indexOf(q)===-1)return false;
+    }
+    return true;
+  });
+  if(!kioskCategory&&!q){
+    grid.innerHTML='<div class="kiosk-empty-hint">Pilih kategori atau cari produk di atas.</div>';
+    return;
+  }
+  if(!list.length){
+    grid.innerHTML='<div class="kiosk-empty-hint">Tidak ada produk yang cocok.</div>';
+    return;
+  }
+  var capped=list.length>60;
+  var shown=capped?list.slice(0,60):list;
+  grid.innerHTML=shown.map(function(p){
+    var img=productImageSrc(p.code);
+    var isSM=p.series&&p.series.indexOf('SM-')===0;
+    var priceLbl=isSM?('IDR '+p.idrDirect.toLocaleString('id-ID')):(String.fromCharCode(8364)+p.price.toLocaleString());
+    var thumb=img?'<img src="'+img+'" alt="">':'<span class="kiosk-noimg">&#128247;</span>';
+    var safeCode=p.code.replace(/'/g,"\\'");
+    return '<div class="kiosk-card" onclick="kioskOpenSheet(\''+safeCode+'\')">'
+      +'<div class="kiosk-card-thumb">'+thumb+stockBadgeHtml(p.code)+'</div>'
+      +'<div class="kiosk-card-code">'+p.code+'</div>'
+      +'<div class="kiosk-card-desc">'+p.desc.substring(0,46)+(p.desc.length>46?'…':'')+'</div>'
+      +'<div class="kiosk-card-price">'+priceLbl+'</div>'
+    +'</div>';
+  }).join('')+(capped?'<div class="kiosk-empty-hint">Menampilkan 60 dari '+list.length+' produk — persempit dengan pencarian.</div>':'');
+}
+function kioskOpenSheet(code){
+  var p=PRODUCTS.find(function(x){return x.code===code;});
+  if(!p)return;
+  selectedProd=p;
+  document.getElementById('selected-prod-code').value=p.code;
+  var isSM=p.series&&p.series.indexOf('SM-')===0;
+  document.getElementById('qty').value=1;
+  var lbl=isSM?('IDR '+p.idrDirect.toLocaleString('id-ID')):(String.fromCharCode(8364)+p.price.toLocaleString());
+  document.getElementById('selected-prod-label').value=p.code+' ('+lbl+')';
+  document.getElementById('selected-stock-hint').innerHTML=stockMessageFor(p.code);
+  document.getElementById('add-btn').disabled=false;
+  document.getElementById('add-btn').style.opacity='1';
+  document.getElementById('add-opts').style.display='flex';
+  resetAddOpts('');
+  updateSmOptsVisibility(isSM);
+  updateFxRateHints();
+  kioskRenderSheet(p,isSM);
+  document.getElementById('kiosk-sheet').classList.add('open');
+  document.getElementById('kiosk-sheet-backdrop').classList.add('open');
+}
+function kioskRenderSheet(p,isSM){
+  var img=productImageSrc(p.code);
+  var thumb=img?'<img src="'+img+'" alt="">':'<span class="kiosk-noimg">&#128247;</span>';
+  var qty=parseInt(document.getElementById('qty').value)||1;
+  var stockMsg=stockMessageFor(p.code);
+  var check='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> ';
+  var body='<div class="kiosk-sheet-head">'
+      +'<div class="kiosk-sheet-thumb">'+thumb+'</div>'
+      +'<div class="kiosk-sheet-info">'
+        +'<div class="kiosk-sheet-code">'+p.code+'</div>'
+        +'<div class="kiosk-sheet-series">'+(p.series||'')+'</div>'
+        +'<div class="kiosk-sheet-desc">'+p.desc+'</div>'
+        +(stockMsg?'<div style="margin-top:4px">'+stockMsg+'</div>':'')
+      +'</div>'
+    +'</div>'
+    +'<div class="kiosk-qty-row">'
+      +'<div class="kiosk-qty-lbl">Jumlah</div>'
+      +'<div class="kiosk-qty-stepper">'
+        +'<div class="kiosk-qty-btn" onclick="kioskQtyStep(-1)">&minus;</div>'
+        +'<div class="kiosk-qty-val" id="kiosk-qty-val">'+qty+'</div>'
+        +'<div class="kiosk-qty-btn kiosk-qty-btn-dark" onclick="kioskQtyStep(1)">+</div>'
+      +'</div>'
+    +'</div>';
+  if(!isSM){
+    var fxOn=document.getElementById('opt-fx-on').checked;
+    var ppnOn=document.getElementById('opt-ppn-on').checked;
+    body+='<div class="kiosk-chip-row">'
+      +'<div class="kiosk-toggle-chip'+(fxOn?' active':'')+'" onclick="kioskToggleOpt(\'fx\')">'+(fxOn?check:'')+'FX &times; kurs '+globalFxRate.toLocaleString('id-ID')+'</div>'
+      +'<div class="kiosk-toggle-chip'+(ppnOn?' active':'')+'" onclick="kioskToggleOpt(\'ppn\')">'+(ppnOn?check:'')+'PPN 11%</div>'
+    +'</div>';
+  } else {
+    body+='<div class="kiosk-sm-note">Harga Studiomaster sudah final (IDR, termasuk PPN) — FX &amp; PPN tidak berlaku</div>';
+  }
+  body+='<div class="kiosk-price-box" id="kiosk-price-box"></div>'
+    +'<div class="kiosk-add-btn" id="kiosk-add-btn" onclick="kioskAdd()">Tambah ke Pesanan</div>';
+  document.getElementById('kiosk-sheet-body').innerHTML=body;
+  kioskUpdateBreakdown(p,isSM);
+}
+function kioskToggleOpt(which){
+  if(!selectedProd)return;
+  var id=which==='fx'?'opt-fx-on':'opt-ppn-on';
+  var el=document.getElementById(id);
+  el.checked=!el.checked;
+  if(which==='fx')toggleOptFx();
+  var isSM=selectedProd.series&&selectedProd.series.indexOf('SM-')===0;
+  kioskRenderSheet(selectedProd,isSM);
+}
+function kioskQtyStep(delta){
+  var el=document.getElementById('qty');
+  var v=Math.max(1,(parseInt(el.value)||1)+delta);
+  el.value=v;
+  var lbl=document.getElementById('kiosk-qty-val');
+  if(lbl)lbl.textContent=v;
+  if(selectedProd){
+    var isSM=selectedProd.series&&selectedProd.series.indexOf('SM-')===0;
+    kioskUpdateBreakdown(selectedProd,isSM);
+  }
+}
+function kioskUpdateBreakdown(p,isSM){
+  var box=document.getElementById('kiosk-price-box');
+  if(!box)return;
+  var qty=parseInt(document.getElementById('qty').value)||1;
+  var fxOn=isSM?false:document.getElementById('opt-fx-on').checked;
+  var ppnOn=isSM?true:document.getElementById('opt-ppn-on').checked;
+  var tmp={
+    catalogPrice:isSM?null:p.price,
+    idrDirect:isSM?p.idrDirect:null,
+    fxOn:fxOn,
+    fxRate:fxOn?globalFxRate:0,
+    ppnOn:ppnOn,
+    includesPPN:!!isSM
+  };
+  var unit=unitIdr(tmp);
+  var lineTotal=unit*qty;
+  var rows='';
+  if(isSM){
+    rows='<div class="kiosk-price-row"><span>Harga satuan (sudah termasuk PPN)</span><span>IDR '+p.idrDirect.toLocaleString('id-ID')+'</span></div>';
+  } else {
+    if(fxOn){
+      rows+='<div class="kiosk-price-row"><span>&euro;'+p.price.toLocaleString()+' &times; kurs '+globalFxRate.toLocaleString('id-ID')+'</span><span>IDR '+Math.round(p.price*globalFxRate).toLocaleString('id-ID')+'</span></div>';
+    }
+    if(ppnOn){
+      var base=fxOn?p.price*globalFxRate:p.price;
+      rows+='<div class="kiosk-price-row"><span>PPN 11%</span><span>+IDR '+Math.round(base*0.11).toLocaleString('id-ID')+'</span></div>';
+    }
+  }
+  rows+='<div class="kiosk-price-sep"></div>'
+    +'<div class="kiosk-price-row kiosk-price-total"><span>Harga satuan</span><span>IDR '+unit.toLocaleString('id-ID')+'</span></div>';
+  if(qty>1){
+    rows+='<div class="kiosk-price-row kiosk-price-total"><span>Total ('+qty+'&times;)</span><span>IDR '+lineTotal.toLocaleString('id-ID')+'</span></div>';
+  }
+  box.innerHTML=rows;
+  var addBtn=document.getElementById('kiosk-add-btn');
+  if(addBtn)addBtn.textContent='Tambah ke Pesanan · IDR '+lineTotal.toLocaleString('id-ID');
+}
+function kioskAdd(){
+  if(!selectedProd)return;
+  addCatalogItem();
+  kioskCloseSheet();
+}
+function kioskCloseSheet(){
+  var sheet=document.getElementById('kiosk-sheet');
+  var backdrop=document.getElementById('kiosk-sheet-backdrop');
+  if(sheet)sheet.classList.remove('open');
+  if(backdrop)backdrop.classList.remove('open');
 }
 
 function clearSelection(){
@@ -3167,6 +3428,7 @@ function renderAll(){
   var tb=document.getElementById('tbody');
   refreshSectionSelect();
   scheduleDraftSave();
+  kioskRenderGrid();
   if(!items.length){
     tb.innerHTML='<tr><td colspan="9" class="empty-state">Belum ada produk \u2014 tambahkan di atas</td></tr>';
     updateTots();return;
@@ -3863,6 +4125,7 @@ loadStoredProductImages();
 loadDefaultProductImages();
 loadStockLevels();
 filterProds();
+kioskRenderGrid();
 loadPersistedSeq();
 loadPersistedFxRate();
 updateMemCount();
