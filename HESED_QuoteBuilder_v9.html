@@ -22,6 +22,7 @@ html{-webkit-text-size-adjust:100%}
 body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.45;-webkit-font-smoothing:antialiased}
 .app{max-width:980px;margin:0 auto;padding:24px 16px}
 .top-bar{background:var(--ink);color:#fff;padding:16px 22px;border-radius:var(--radius-lg);display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:16px;flex-wrap:wrap}
+.top-bar-ref-pill{display:none}
 .top-bar h1{font-size:17px;font-weight:700;letter-spacing:-.01em}
 .top-bar p{font-size:11.5px;color:#9a9a9e;margin-top:3px}
 .card{background:#fff;border-radius:var(--radius-lg);padding:22px;margin-bottom:16px;border:1px solid var(--border);box-shadow:var(--shadow-sm)}
@@ -88,6 +89,9 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 
 /* Stock */
 .stock-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.stock-icon-wrap{display:none}
+.stock-upload-lbl{display:none}
+.cta-add-product{display:none}
 .stock-badge{display:inline-block;font-size:9.5px;font-weight:700;border-radius:4px;padding:1px 6px;margin-top:3px;letter-spacing:.02em}
 .stock-ok{background:#e8f4ea;color:#2d7a3a}
 .stock-low{background:#fff4e0;color:#a86400}
@@ -345,7 +349,31 @@ td:nth-child(4),th:nth-child(4){text-align:center}
    since it mirrors a fixed A4 page ─────────────────────────────── */
 @media (max-width:760px){
   .app{padding:14px 10px}
-  .top-bar{padding:14px 16px;border-radius:14px}
+  .top-bar{padding:14px 16px;border-radius:14px 14px 0 0;margin-bottom:0;background:linear-gradient(135deg,#26262a 0%,#121214 100%);box-shadow:0 4px 16px rgba(0,0,0,.18)}
+  .top-bar-ref-pill{display:block;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:6px 10px;text-align:right;flex-shrink:0}
+  .top-bar-ref-lbl{font-size:8px;color:#8a8a8f;text-transform:uppercase;letter-spacing:.05em;font-weight:600;display:block}
+  #top-bar-ref-val{font-size:11px;font-weight:700;color:#fff}
+
+  /* Tabs — segmented pill control flush under the dark header */
+  .tabs{display:flex;background:linear-gradient(135deg,#26262a 0%,#121214 100%);border-bottom:none;border-radius:0 0 14px 14px;padding:8px 10px 12px;margin-bottom:20px;gap:4px;box-shadow:0 4px 16px rgba(0,0,0,.18);overflow-x:visible}
+  .tab{flex:1;text-align:center;color:#8a8a8f;border-radius:9px;padding:9px 6px;min-height:38px;border-bottom:none!important;margin-bottom:0}
+  .tab.active{background:linear-gradient(135deg,#3a3a3e 0%,#232325 100%);color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2);border-bottom:none!important}
+
+  /* Client name — the primary field, given visual weight */
+  #client-name-field input{border:1.5px solid #1a1a1a;box-shadow:0 0 0 4px rgba(26,26,26,.06)}
+
+  /* Save client — gradient pill to match the rest of the kiosk styling */
+  #client-actions .btn-save-client{background:linear-gradient(135deg,#2a2a2e 0%,#131315 100%);color:#fff;border:none;box-shadow:0 3px 8px rgba(0,0,0,.18);padding:9px 14px;border-radius:9px}
+  #client-actions .mem-count{color:#b0b0b5}
+
+  /* Stock strip: icon + pill upload button instead of the native chooser */
+  #stock-icon-wrap{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;background:radial-gradient(circle at 50% 35%,#ffffff 0%,#f5f6f8 100%);flex-shrink:0}
+  #stock-file-inp{position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none}
+  .stock-upload-lbl{display:inline-block;background:#f0f0f2;color:#555;font-size:10.5px;font-weight:700;padding:7px 12px;border-radius:8px;cursor:pointer;flex-shrink:0}
+
+  /* Clear next step, mirroring the approved mockup */
+  .cta-add-product{display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#29292d 0%,#0f0f11 100%);color:#fff;font-size:14.5px;font-weight:700;border-radius:14px;padding:16px;box-shadow:0 10px 24px rgba(0,0,0,.22);margin-bottom:16px;cursor:pointer}
+  .cta-add-product:active{transform:scale(.98)}
   .top-bar h1{font-size:15px}
   .top-bar p{font-size:10.5px}
   .card{padding:16px;border-radius:14px}
@@ -377,10 +405,9 @@ td:nth-child(4),th:nth-child(4){text-align:center}
   /* ── Stock card: a slim status strip instead of a full block ── */
   #stock-card{padding:12px}
   #stock-card h2{display:none}
-  #stock-card .hint{display:none}
-  #stock-card .stock-row{margin-bottom:0;gap:8px}
-  #stock-file-inp{font-size:11.5px;max-width:100%}
-  #stock-status{font-size:11px;color:#888}
+  #stock-card>.hint{display:none}
+  #stock-card .stock-row{margin-bottom:0;gap:8px;flex-wrap:nowrap}
+  #stock-status{font-size:11px;color:#888;flex:1;min-width:0}
 
   /* Item table → stacked cards */
   .items-table thead{display:none}
@@ -582,6 +609,10 @@ td:nth-child(4),th:nth-child(4){text-align:center}
     <h1>HESED Quote Builder</h1>
     <p>PT HESED Kharis Indonesia &nbsp;&middot;&nbsp; TW Audio 05-2026 &nbsp;&middot;&nbsp; Studiomaster 2024</p>
   </div>
+  <div class="top-bar-ref-pill" id="top-bar-ref-pill">
+    <span class="top-bar-ref-lbl">No. Quotation</span>
+    <span id="top-bar-ref-val">&mdash;</span>
+  </div>
 </div>
 
 <div class="tabs">
@@ -663,13 +694,22 @@ td:nth-child(4),th:nth-child(4){text-align:center}
   <div class="card" id="stock-card">
     <h2>Stok barang (hanya terlihat di sini, tidak tercetak)</h2>
     <div class="stock-row">
+      <div class="stock-icon-wrap" id="stock-icon-wrap">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8a8a8f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8V21H3V8"/><path d="M1 3H23V8H1z"/><path d="M10 12H14"/></svg>
+      </div>
       <input type="file" accept=".xlsx,.xls,.csv" id="stock-file-inp" onchange="onStockFileSelect(event)">
       <span class="hint" id="stock-status">Belum ada data stok diunggah.</span>
+      <label for="stock-file-inp" class="stock-upload-lbl" id="stock-upload-lbl">Unggah</label>
     </div>
     <div class="hint">Unggah file Excel/CSV dengan kolom kode produk &amp; jumlah stok (urutan kolom bebas, boleh ada header atau tidak). Data stok tersimpan untuk semua yang pakai app ini &mdash; unggah ulang kapan saja untuk memperbarui.</div>
   </div>
 
-  <div class="card">
+  <div class="cta-add-product" id="cta-add-product" onclick="scrollToAddProduct()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Tambah Produk Pertama
+  </div>
+
+  <div class="card" id="add-product-card">
     <h2>Add product</h2>
     <div class="card-tabs">
       <button class="card-tab active" onclick="showSubTab('catalog')">From catalog (TW Audio &mdash; &euro;)</button>
@@ -973,7 +1013,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
   </div>
   <div class="print-actions">
     <button class="btn btn-outline" onclick="showTab('builder')">&larr; Back to builder</button>
-    <button class="btn btn-dark" onclick="window.print()">&#128424; Print / Save as PDF</button>
+    <button class="btn btn-dark" onclick="printAsRef()">&#128424; Print / Save as PDF</button>
     <button class="btn btn-outline" onclick="exportToWord()">&#128190; Export to Word (.rtf, editable)</button>
     <button class="btn btn-outline" onclick="saveQuoteToHistory()">&#9729; Save to history</button>
   </div>
@@ -2320,7 +2360,15 @@ function updateRef(){
   const seq=String(getSeq()).padStart(3,'0');
   const auto=autoPrefix()+'QT'+seq+(code?code:'');
   document.getElementById('ref-preview').textContent=auto;
+  var pillEl=document.getElementById('top-bar-ref-val');
+  if(pillEl)pillEl.textContent=getRef()||auto;
   renderAll(); // refresh discount preview
+}
+
+// Mobile "Tambah Produk Pertama" CTA — a clear next step instead of a wall of fields
+function scrollToAddProduct(){
+  var el=document.getElementById('add-product-card');
+  if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 function adjustSeq(delta){
@@ -2338,6 +2386,25 @@ function getRef(){
   const code=(document.getElementById('client-code').value||'').toUpperCase().replace(/\s+/g,'');
   const seq=String(getSeq()).padStart(3,'0');
   return autoPrefix()+'QT'+seq+(code?code:'');
+}
+
+// Browsers name a "Save as PDF" print job after document.title — swap it to
+// the quote number just for the print, so files saved to disk are named
+// like the quotation instead of the generic app title.
+function printAsRef(){
+  var ref=(getRef()||'HESED Quote').trim();
+  var original=document.title;
+  document.title=ref;
+  var restored=false;
+  function restore(){
+    if(restored)return;
+    restored=true;
+    document.title=original;
+    window.removeEventListener('afterprint',restore);
+  }
+  window.addEventListener('afterprint',restore);
+  window.print();
+  setTimeout(restore,4000); // fallback for browsers that don't fire afterprint reliably
 }
 
 function loadPersistedSeq(){
