@@ -359,6 +359,29 @@ td:nth-child(4),th:nth-child(4){text-align:center}
   .print-actions .btn{width:100%}
   .section-bar{flex-direction:column;align-items:stretch}
 
+  /* ── Quote details card: client info first, admin details small & quiet ── */
+  #quote-details-card{display:flex;flex-direction:column}
+  #qd-clientaddr{order:1;margin-top:0!important}
+  #quote-details-card .grid-full{order:2}
+  #client-actions{order:3}
+  #qd-datecontact{order:4;margin-top:14px!important}
+  #qnum-row{order:5;margin-top:14px;background:#f8f8fa;border-radius:12px;padding:12px;gap:8px 10px;flex-direction:row!important;flex-wrap:wrap;align-items:stretch}
+  #qnum-row>div{flex:1 1 45%!important;min-width:130px!important;width:auto!important}
+  #qnum-row .qn-label{font-size:9px}
+  #qnum-row .qnum-preview{font-size:11px;padding:8px 10px;background:#fff}
+  #qnum-row .field label,#qnum-row>div>label{font-size:9px}
+  #qnum-row .field input{font-size:12.5px;padding:8px 10px;min-height:36px;background:#fff}
+  #qnum-row .seq-btn,#qnum-row .seq-inp{width:30px;height:30px;min-height:0;font-size:12px}
+  #client-name-field input{font-size:16px;font-weight:600}
+
+  /* ── Stock card: a slim status strip instead of a full block ── */
+  #stock-card{padding:12px}
+  #stock-card h2{display:none}
+  #stock-card .hint{display:none}
+  #stock-card .stock-row{margin-bottom:0;gap:8px}
+  #stock-file-inp{font-size:11.5px;max-width:100%}
+  #stock-status{font-size:11px;color:#888}
+
   /* Item table → stacked cards */
   .items-table thead{display:none}
   .items-table,.items-table tbody,.items-table tr,.items-table td{display:block;width:100%}
@@ -578,11 +601,11 @@ td:nth-child(4),th:nth-child(4){text-align:center}
     </span>
   </div>
 
-  <div class="card">
+  <div class="card" id="quote-details-card">
     <h2>Quote details</h2>
 
     <!-- Quote number assembler -->
-    <div class="qnum-row">
+    <div class="qnum-row" id="qnum-row">
       <div class="qnum-preview">
         <span class="qn-label">Quote number (auto)</span>
         <span id="ref-preview">&mdash;</span>
@@ -609,15 +632,15 @@ td:nth-child(4),th:nth-child(4){text-align:center}
       </div>
     </div>
 
-    <div class="grid2" style="margin-top:16px">
+    <div class="grid2" id="qd-datecontact" style="margin-top:16px">
       <div class="field"><label>Date (Tanggal) — leave blank for today</label><input id="qt-date" type="text" placeholder="e.g. 12 Juni 2026"></div>
       <div class="field">
         <label>Contact person (Kepada Yth)</label>
         <input id="contact" type="text" placeholder="e.g. Bpk. Pdt. Antonius Tan" oninput="onClientFieldEdit()">
       </div>
     </div>
-    <div class="grid2" style="margin-top:12px">
-      <div class="field">
+    <div class="grid2" id="qd-clientaddr" style="margin-top:12px">
+      <div class="field" id="client-name-field">
         <label>Client / Church name</label>
         <div class="client-wrap">
           <input id="client" type="text" placeholder="e.g. Gereja Bethany Manado" oninput="onClientNameInput()" autocomplete="off">
