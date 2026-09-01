@@ -879,9 +879,13 @@ td:nth-child(4),th:nth-child(4){text-align:center}
     <label class="doc-custom-lbl" for="doc-img-size">Ukuran gambar produk di dokumen</label>
     <select id="doc-img-size" onchange="setDocImageSize(this.value)">
       <option value="sm">Kecil</option>
-      <option value="md" selected>Sedang</option>
-      <option value="lg">Besar</option>
+      <option value="md">Sedang</option>
+      <option value="lg" selected>Besar</option>
     </select>
+    <label class="doc-custom-lbl" for="doc-show-ppn" style="margin-left:10px">
+      <input type="checkbox" id="doc-show-ppn" checked onchange="setDocShowPpn(this.checked)" style="vertical-align:middle;margin-right:4px">
+      Tampilkan rincian PPN
+    </label>
     <span class="print-tip">Print dialog &rarr; destination "Save as PDF" &middot; set margins to Minimum or None</span>
   </div>
   <div class="doc-wrap" id="doc-wrap">
@@ -3355,6 +3359,13 @@ var BANNER_URI = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwM
 // row) — the table column then sizes itself to the LARGEST size actually
 // used on that page, so nothing gets clipped.
 let docImageSize='lg';
+// Per-quote only — whether the totals box breaks PPN out as its own line,
+// or just shows one final "Harga Total" figure.
+let docShowPpn=true;
+function setDocShowPpn(v){
+  docShowPpn=!!v;
+  buildDoc();
+}
 const DOC_IMG_SIZES={
   sm:{colPct:6, imgW:34, imgH:26, label:'Kecil'},
   md:{colPct:8, imgW:52, imgH:40, label:'Sedang'},
@@ -3420,11 +3431,13 @@ function buildDoc(){
       +'<div class="qt-meta-val">'+val+'</div>'
     +'</div>';
   }
+  // Only show meta rows that actually have something filled in — an empty
+  // "Kepada Yth." / "Alamat" line looks like a mistake on the printed doc.
   var metaHtml='<div class="qt-meta">'
     +metaGroup('No. Quotation','<strong>'+ref+'</strong>')
     +metaGroup('Tanggal',date)
-    +metaGroup('Kepada Yth.',contact+(client?'<br>'+client:''))
-    +metaGroup('Alamat',address)
+    +((contact||client)?metaGroup('Kepada Yth.',contact+(client?'<br>'+client:'')):'')
+    +(address?metaGroup('Alamat',address):'')
     +(project?metaGroup('Proyek',project):'')
   +'</div>';
 
@@ -3483,10 +3496,12 @@ function buildDoc(){
   var ppnAmount = grandWithPPN - baseBeforePPN;
   var totalsHtml='<div class="doc-totals-wrap">'
     +'<div class="doc-tot-inner">'
-      +'<div class="doc-tot-row"><span class="lbl">Harga Total</span><span class="amt">'+fmt(baseBeforePPN)+'</span></div>'
-      +'<div class="doc-tot-row"><span class="lbl">PPN 11%</span><span class="amt">'+fmt(ppnAmount)+'</span></div>'
-      +'<div class="doc-tot-divider"></div>'
-      +'<div class="doc-tot-grand"><span class="lbl">Harga Total dan PPN</span><span class="amt">'+fmt(grandWithPPN)+'</span></div>'
+      +(docShowPpn
+        ? '<div class="doc-tot-row"><span class="lbl">Harga Total</span><span class="amt">'+fmt(baseBeforePPN)+'</span></div>'
+          +'<div class="doc-tot-row"><span class="lbl">PPN 11%</span><span class="amt">'+fmt(ppnAmount)+'</span></div>'
+          +'<div class="doc-tot-divider"></div>'
+          +'<div class="doc-tot-grand"><span class="lbl">Harga Total dan PPN</span><span class="amt">'+fmt(grandWithPPN)+'</span></div>'
+        : '<div class="doc-tot-grand"><span class="lbl">Harga Total</span><span class="amt">'+fmt(grandWithPPN)+'</span></div>')
     +'</div>'
   +'</div>';
 
