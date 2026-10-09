@@ -1015,6 +1015,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
     <button class="btn btn-outline" onclick="showTab('builder')">&larr; Back to builder</button>
     <button class="btn btn-dark" onclick="printAsRef()">&#128424; Print / Save as PDF</button>
     <button class="btn btn-outline" onclick="exportToWord()">&#128190; Export to Word (.rtf, editable)</button>
+    <button class="btn btn-outline" onclick="exportToExcel()">&#128202; Export to Excel</button>
     <button class="btn btn-outline" onclick="saveQuoteToHistory()">&#9729; Save to history</button>
   </div>
   <div class="print-actions doc-custom-bar">
@@ -2343,6 +2344,65 @@ function exportToWord(){
   }
 }
 
+// Excel export — final numbers only, no formulas. Each cell is written as
+// a plain value (XLSX.utils.aoa_to_sheet never emits a formula string),
+// so the sheet is safe to hand to a client who shouldn't see the markup.
+function exportToExcel(){
+  if(!items.length){alert('Tambahkan produk dahulu di tab Builder.');return;}
+  try{
+    var ref=getRef()||'Quotation';
+    var client=document.getElementById('client').value||'';
+    var contact=document.getElementById('contact').value||'';
+    var address=document.getElementById('address').value||'';
+    var project=document.getElementById('project').value||'';
+    var date=document.getElementById('qt-date').value||idDate();
+    var sectionGroups=groupBySection(items);
+
+    var rows=[];
+    rows.push(['QUOTATION']);
+    rows.push(['No. Quotation',ref]);
+    rows.push(['Tanggal',date]);
+    rows.push(['Kepada Yth.',contact+(client?' / '+client:'')]);
+    rows.push(['Alamat',address]);
+    if(project)rows.push(['Proyek',project]);
+    rows.push([]);
+
+    sectionGroups.forEach(function(g){
+      if(g.name)rows.push(['Daftar Barang — '+g.name]);
+      rows.push(['Produk','Deskripsi','Spesifikasi','Qty','Harga Satuan','Disc %','Total']);
+      var subtotal=0;
+      g.items.forEach(function(it){
+        var uShow=unitFinal(it);
+        var totalShow=uShow*it.qty;
+        subtotal+=totalShow;
+        rows.push([
+          it.displayName||it.code,
+          it.desc||'',
+          it.specs||'',
+          it.qty,
+          uShow,
+          parseFloat(it.itemDisc)||0,
+          totalShow
+        ]);
+      });
+      rows.push(['','','','','','Subtotal'+(g.name?' — '+g.name:''),subtotal]);
+      rows.push([]);
+    });
+
+    rows.push(['','','','','','Harga Total',calcTotals().grand]);
+
+    var ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:22},{wch:40},{wch:30},{wch:6},{wch:14},{wch:9},{wch:16}];
+    var wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Quotation');
+    var refName=ref.replace(/[^a-zA-Z0-9_-]/g,'_');
+    XLSX.writeFile(wb,refName+'.xlsx');
+  }catch(e){
+    console.error('Excel export failed',e);
+    alert('Gagal membuat file Excel. Coba lagi.');
+  }
+}
+
 /* ---- Quote number ---- */
 function autoPrefix(){
   const now=new Date();
@@ -3245,6 +3305,15 @@ function updateQty(i,v){items[i].qty=parseInt(v)||1;renderAll();}
 
 function updateItemDesc(i,v){items[i].desc=v;}
 function updateItemSpecs(i,v){items[i].specs=v;}
+// Custom (IDR) items have a hand-typed name instead of a catalog code —
+// let that be corrected after the fact, same as the price already can be.
+function updateItemName(i,v){
+  if(!items[i])return;
+  var name=v.trim()||items[i].code;
+  items[i].code=name;
+  items[i].displayName=name;
+  renderAll();
+}
 
 // ── Product image upload / drag-and-drop, persisted to localStorage ──
 // keyed by product code so the image is reused automatically next time
@@ -3536,6 +3605,9 @@ function renderAll(){
     var totalFinal=uFinal*it.qty;
     var saved=(u-uFinal)*it.qty;
     var badge=it.custom?'<span class="idr-badge">IDR direct</span>':'';
+    var nameCellHtml=it.custom
+      ?'<input class="ioc-inp" style="width:100%;font-weight:600" type="text" value="'+escapeHtml(it.code)+'" onchange="updateItemName('+i+',this.value)" title="Edit nama barang">'
+      :'<strong>'+escapeHtml(it.code)+'</strong>';
     var descVal=escapeHtml(it.desc||'');
     var specsVal=escapeHtml(it.specs||'');
     var descEditHtml='<textarea class="desc-edit" placeholder="Deskripsi produk..." onchange="updateItemDesc('+i+',this.value)">'+descVal+'</textarea>';
@@ -3651,7 +3723,7 @@ function renderAll(){
     +'</div>';
 
     var rowHtml='<tr draggable="true" data-idx="'+i+'" ondragstart="dragStart(event,'+i+')" ondragover="dragOverRow(event)" ondragleave="dragLeaveRow(event)" ondrop="dropRow(event,'+i+')" ondragend="dragEndRow()">'
-      +'<td data-label="Produk"><span class="drag-grip" title="Geser untuk mengurutkan ulang">&#10247;</span><strong>'+it.code+'</strong><div style="font-size:10px;color:#aaa;margin-top:2px">'+it.series+'</div>'+badge+stockBadgeHtml(it.code)+'</td>'
+      +'<td data-label="Produk"><span class="drag-grip" title="Geser untuk mengurutkan ulang">&#10247;</span>'+nameCellHtml+'<div style="font-size:10px;color:#aaa;margin-top:2px">'+it.series+'</div>'+badge+stockBadgeHtml(it.code)+'</td>'
       +'<td data-label="Gambar" style="text-align:center;vertical-align:top">'+imgCellHtml+'</td>'
       +'<td data-label="Deskripsi" style="vertical-align:top">'+descEditHtml+'</td>'
       +'<td data-label="Spesifikasi" style="vertical-align:top">'+specsEditHtml+'</td>'
