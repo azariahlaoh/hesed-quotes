@@ -112,6 +112,9 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .block-row-thumb-text{display:flex;align-items:center;justify-content:center;font-size:12px;color:#aaa;font-weight:700}
 .block-row-info{flex:1;min-width:0}
 .block-row-title{font-size:12.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.section-rename-inp{width:100%;font-size:12.5px;font-weight:700;color:var(--ink);border:1px solid transparent;border-radius:5px;padding:3px 6px;background:transparent}
+.section-rename-inp:hover{border-color:var(--border)}
+.section-rename-inp:focus{outline:none;border-color:#1a1a1a;background:#fff}
 .block-row-meta{font-size:10.5px;color:var(--muted)}
 .block-row-actions{display:flex;gap:6px;flex-shrink:0}
 .section-hdr-row td{background:#1a1a1a !important;color:#fff !important;font-weight:700;padding:7px 10px !important;font-size:10px !important;text-transform:uppercase;letter-spacing:.05em;border-bottom:none !important}
@@ -903,10 +906,10 @@ td:nth-child(4),th:nth-child(4){text-align:center}
         <option value="">(Umum)</option>
       </select>
       <button type="button" class="btn-sm btn-outline" onclick="addNewSection()">+ Bagian / Ruangan Baru</button>
-      <button type="button" class="btn-sm btn-outline" onclick="enterSectionReorderMode()" id="section-reorder-btn">&#8645; Urutkan halaman</button>
+      <button type="button" class="btn-sm btn-outline" onclick="enterSectionReorderMode()" id="section-reorder-btn">&#9998; Edit / Urutkan Bagian</button>
     </div>
     <div id="section-reorder-panel" style="display:none;margin-bottom:14px">
-      <div class="section-bar-lbl" style="display:block;margin-bottom:8px">Geser untuk mengurutkan halaman Daftar Barang di dokumen:</div>
+      <div class="section-bar-lbl" style="display:block;margin-bottom:8px">Ubah nama dan/atau geser untuk mengurutkan halaman Daftar Barang di dokumen — bisa dilakukan kapan saja, termasuk bagian yang sudah berisi produk:</div>
       <div id="section-reorder-list"></div>
       <div style="display:flex;gap:8px;margin-top:10px">
         <button type="button" class="btn-sm btn-dark" onclick="confirmSectionReorder()">Selesai</button>
@@ -1929,10 +1932,6 @@ function onSectionSelectChange(v){currentSection=v;}
 var sectionReorderBackup=null;
 
 function enterSectionReorderMode(){
-  var used={};
-  items.forEach(function(it){used[it.section||'']=true;});
-  var activeCount=sectionList.filter(function(s){return used[s];}).length;
-  if(activeCount<2){alert('Cuma ada 1 halaman Daftar Barang — tidak ada yang perlu diurutkan.');return;}
   sectionReorderBackup=sectionList.slice();
   document.getElementById('section-reorder-btn').style.display='none';
   document.getElementById('section-reorder-panel').style.display='block';
@@ -1944,15 +1943,42 @@ function renderSectionReorderList(){
   items.forEach(function(it){used[it.section||'']=true;});
   var wrap=document.getElementById('section-reorder-list');
   wrap.innerHTML=sectionList.map(function(s,i){
-    var label=s?escapeHtml(s):'(Umum)';
     var unused=!used[s]?' <span style="color:#bbb;font-size:10px">(tidak dipakai)</span>':'';
+    // The blank "(Umum)" bucket is the fixed default — every section name
+    // besides it can be renamed in place, items and content blocks follow.
+    var titleHtml=s
+      ?'<input type="text" class="section-rename-inp" value="'+escapeHtml(s)+'" onchange="renameSection('+i+',this.value)">'
+      :'<div class="block-row-title">(Umum)</div>';
     return '<div class="block-row" draggable="true" data-idx="'+i+'" '
       +'ondragstart="dragStart(event,'+i+',\'sections\')" ondragover="dragOverRow(event)" '
       +'ondragleave="dragLeaveRow(event)" ondrop="dropRow(event,'+i+',\'sections\')" ondragend="dragEndRow()">'
       +'<span class="drag-grip" title="Geser untuk mengurutkan ulang">&#10247;</span>'
-      +'<div class="block-row-info"><div class="block-row-title">'+label+unused+'</div></div>'
+      +'<div class="block-row-info">'+titleHtml+unused+'</div>'
     +'</div>';
   }).join('');
+}
+
+// Renaming a section carries every item and content block referencing the
+// old name along with it, so a room/section already full of products can
+// still be renamed without losing or orphaning anything.
+function renameSection(i,newName){
+  newName=(newName||'').trim();
+  var oldName=sectionList[i];
+  if(!newName){renderSectionReorderList();return;}
+  if(newName===oldName)return;
+  if(sectionList.indexOf(newName)!==-1){
+    alert('Nama "'+newName+'" sudah dipakai untuk bagian lain.');
+    renderSectionReorderList();
+    return;
+  }
+  sectionList[i]=newName;
+  items.forEach(function(it){ if((it.section||'')===oldName) it.section=newName; });
+  customBlocks.forEach(function(b){ if(b.afterKey===oldName) b.afterKey=newName; });
+  if(currentSection===oldName) currentSection=newName;
+  refreshSectionSelect();
+  renderSectionReorderList();
+  renderAll();
+  renderBlocksList();
 }
 
 function confirmSectionReorder(){
