@@ -864,6 +864,10 @@ td:nth-child(4),th:nth-child(4){text-align:center}
         <label class="item-opt-toggle">
           <input type="checkbox" id="opt-ppn-on" checked> PPN 11%
         </label>
+        <div class="item-opts-sep"></div>
+        <label class="item-opt-toggle">
+          <input type="checkbox" id="opt-twmarkup-on" checked> Markup TW Audio &times;1.8
+        </label>
         </span>
         <div class="item-opts-sep"></div>
         <label class="item-opt-toggle">
@@ -2798,9 +2802,11 @@ function kioskRenderSheet(p,isSM){
   if(!isSM){
     var fxOn=document.getElementById('opt-fx-on').checked;
     var ppnOn=document.getElementById('opt-ppn-on').checked;
+    var twOn=document.getElementById('opt-twmarkup-on').checked;
     body+='<div class="kiosk-chip-row">'
       +'<div class="kiosk-toggle-chip'+(fxOn?' active':'')+'" onclick="kioskToggleOpt(\'fx\')">'+(fxOn?check:'')+'FX &times; kurs '+globalFxRate.toLocaleString('id-ID')+'</div>'
       +'<div class="kiosk-toggle-chip'+(ppnOn?' active':'')+'" onclick="kioskToggleOpt(\'ppn\')">'+(ppnOn?check:'')+'PPN 11%</div>'
+      +'<div class="kiosk-toggle-chip'+(twOn?' active':'')+'" onclick="kioskToggleOpt(\'twmarkup\')">'+(twOn?check:'')+'Markup &times;1.8</div>'
     +'</div>';
   } else {
     body+='<div class="kiosk-sm-note">Harga Studiomaster sudah final (IDR, termasuk PPN) — FX &amp; PPN tidak berlaku</div>';
@@ -2812,7 +2818,7 @@ function kioskRenderSheet(p,isSM){
 }
 function kioskToggleOpt(which){
   if(!selectedProd)return;
-  var id=which==='fx'?'opt-fx-on':'opt-ppn-on';
+  var id=which==='fx'?'opt-fx-on':(which==='twmarkup'?'opt-twmarkup-on':'opt-ppn-on');
   var el=document.getElementById(id);
   el.checked=!el.checked;
   if(which==='fx')toggleOptFx();
@@ -2836,12 +2842,14 @@ function kioskUpdateBreakdown(p,isSM){
   var qty=parseInt(document.getElementById('qty').value)||1;
   var fxOn=isSM?false:document.getElementById('opt-fx-on').checked;
   var ppnOn=isSM?true:document.getElementById('opt-ppn-on').checked;
+  var twOn=isSM?false:document.getElementById('opt-twmarkup-on').checked;
   var tmp={
     catalogPrice:isSM?null:p.price,
     idrDirect:isSM?p.idrDirect:null,
     fxOn:fxOn,
     fxRate:fxOn?globalFxRate:0,
     ppnOn:ppnOn,
+    twMarkupOn:twOn,
     includesPPN:!!isSM
   };
   var unit=unitIdr(tmp);
@@ -3140,8 +3148,12 @@ function fmt(n){return 'IDR'+Math.round(n).toLocaleString('id-ID');}
 function addProductToItems(p,qty,opts){
   var isSM=p.series&&p.series.indexOf('SM-')===0;
   opts=opts||{fxOn:false,fxRate:0,fxCurrency:'',ppnOn:false,itemDisc:0};
-  // Studiomaster prices are already final IDR (incl. PPN) — FX/PPN never apply.
-  if(isSM){ opts.ppnOn=false; opts.fxOn=false; opts.fxRate=0; opts.fxCurrency=''; }
+  // Studiomaster prices are already final IDR (incl. PPN) — FX/PPN/markup never apply.
+  if(isSM){ opts.ppnOn=false; opts.fxOn=false; opts.fxRate=0; opts.fxCurrency=''; opts.twMarkupOn=false; }
+  // TW Audio markup defaults to on when not explicitly specified (e.g. Quick
+  // Add, which has no checkbox of its own) — still a checkbox the user can
+  // switch off per item, just automatically checked to start.
+  else if(opts.twMarkupOn===undefined){ opts.twMarkupOn=true; }
   // Adding the same product again always creates a new line, even in the
   // same section — some quotes genuinely need the same product listed
   // separately (different pricing/notes per line), so nothing is merged.
@@ -3160,6 +3172,7 @@ function addProductToItems(p,qty,opts){
     includesPPN:!!isSM,
     fxOn:opts.fxOn, fxRate:opts.fxRate, fxCurrency:opts.fxCurrency,
     ppnOn:opts.ppnOn, itemDisc:opts.itemDisc,
+    twMarkupOn:!!opts.twMarkupOn,
     docImgSize:'lg', docDescSize:'md'
   });
 }
@@ -3310,6 +3323,7 @@ function addCustomItem(){
     includesPPN:false,
     fxOn:opts.fxOn,fxRate:opts.fxRate,fxCurrency:opts.fxCurrency,
     ppnOn:opts.ppnOn,itemDisc:opts.itemDisc,
+    twMarkupOn:false, // custom/IDR-direct items have no EUR catalog price to mark up
     docImgSize:'lg', docDescSize:'md'
   });
   ['c-code','c-desc','c-price'].forEach(function(id){document.getElementById(id).value='';});
@@ -3320,24 +3334,19 @@ function addCustomItem(){
 
 
 // TW Audio (and TW Audio Install) catalog items carry a fixed 1.8x markup
-// over the EUR-converted cost, applied automatically before PPN and
-// discount — Studiomaster (already final IDR pricing) and custom/IDR-direct
-// items are never marked up this way.
+// over the EUR-converted cost, applied before PPN and discount. On by
+// default for those items (off for Studiomaster and custom/IDR-direct),
+// but still a per-item checkbox — see opt-twmarkup-on / it.twMarkupOn.
 var TW_MARKUP=1.8;
-function isTwMarkupItem(it){
-  if(it.custom)return false;
-  var s=it.series||'';
-  return s.indexOf('SM-')!==0;
-}
 
-// Compute unit price based on item's own options (fx, ppn, disc)
+// Compute unit price based on item's own options (fx, ppn, markup, disc)
 function unitIdr(it){
   var p=it.catalogPrice!=null?it.catalogPrice:(it.idrDirect!=null?it.idrDirect:(it.eurPrice!=null?it.eurPrice:(it.idrPrice||0)));
   var result=p;
   // Apply exchange rate if on
   if(it.fxOn && it.fxRate>0) result=result*it.fxRate;
-  // TW Audio markup — always on, before PPN and discount
-  if(isTwMarkupItem(it)) result=result*TW_MARKUP;
+  // TW Audio markup, if on, before PPN and discount
+  if(it.twMarkupOn) result=result*TW_MARKUP;
   // Apply PPN if on — but never for items whose catalog price already includes PPN
   // (e.g. Studiomaster — the pricelist is already PPN-inclusive and in IDR)
   if(it.ppnOn && !it.includesPPN) result=result*1.11;
@@ -3390,22 +3399,26 @@ function getAddOpts(prefix){
   var fxOn=document.getElementById(prefix+'opt-fx-on').checked;
   var ppnOn=document.getElementById(prefix+'opt-ppn-on').checked;
   var discOn=document.getElementById(prefix+'opt-disc-on').checked;
+  var twEl=document.getElementById(prefix+'opt-twmarkup-on');
   return{
     fxOn:fxOn,
     fxRate:fxOn?globalFxRate:0, // one shared rate for every item — see onGlobalFxRateChange
     fxCurrency:fxOn?document.getElementById(prefix+'opt-currency').value:'',
     ppnOn:ppnOn,
-    itemDisc:discOn?parseFloat(document.getElementById(prefix+'opt-disc-pct').value)||0:0
+    itemDisc:discOn?parseFloat(document.getElementById(prefix+'opt-disc-pct').value)||0:0,
+    twMarkupOn:twEl?twEl.checked:undefined // only the catalog panel has this checkbox
   };
 }
 
 function resetAddOpts(prefix){
   prefix=prefix||'';
-  // Catalog (TW Audio) adds default back to FX+PPN checked — that's the
-  // common case. Custom items default the other way (plain IDR).
+  // Catalog (TW Audio) adds default back to FX+PPN+markup checked — that's
+  // the common case. Custom items default the other way (plain IDR).
   var isCatalog=(prefix==='');
   document.getElementById(prefix+'opt-fx-on').checked=isCatalog;
   document.getElementById(prefix+'opt-ppn-on').checked=isCatalog;
+  var twEl=document.getElementById(prefix+'opt-twmarkup-on');
+  if(twEl)twEl.checked=isCatalog;
   document.getElementById(prefix+'opt-disc-on').checked=false;
   document.getElementById(prefix+'opt-fx-fields').style.display=isCatalog?'flex':'none';
   document.getElementById(prefix+'opt-disc-fields').style.display='none';
@@ -3429,6 +3442,10 @@ function syncFx(i){
 }
 function updateItemPpn(i,on){
   items[i].ppnOn=on;
+  renderAll();
+}
+function updateItemTwMarkup(i,on){
+  items[i].twMarkupOn=on;
   renderAll();
 }
 let lastRemoved=null; // {type:'item'|'block', index, data}
@@ -3863,7 +3880,7 @@ function buildItemRowHtml(it,i){
     // Price breakdown for builder view
     var catP=it.catalogPrice!=null?it.catalogPrice:u;
     var fxCur=it.fxOn&&it.fxCurrency?it.fxCurrency:'';
-    var isTwMarkup=isTwMarkupItem(it);
+    var isTwMarkup=!!it.twMarkupOn;
     var hasAnyCalc=it.fxOn||it.ppnOn||effPct>0||it.includesPPN||isTwMarkup;
     // Custom items can have their base price edited after adding — the
     // price was hand-typed in the first place, so there's no catalog
@@ -3923,7 +3940,7 @@ function buildItemRowHtml(it,i){
     var fxChecked=it.fxOn?'checked':'';
     var ppnChecked=it.ppnOn?'checked':'';
     var fxCur=it.fxCurrency||'EUR';
-    var curId='ioc-c'+i, fxId='ioc-f'+i, ppnId='ioc-p'+i;
+    var curId='ioc-c'+i, fxId='ioc-f'+i, ppnId='ioc-p'+i, twId='ioc-tw'+i;
     var imgSizeSelAdv=imgSrc?('<div class="ioc-row"><label class="doc-size-lbl-inline">Ukuran gambar</label>'
       +'<select class="ioc-sel" onchange="updateItemDocImgSize('+i+',this.value)">'
       +'<option value=""'+(!it.docImgSize?' selected':'')+'>Default</option>'
@@ -3952,6 +3969,9 @@ function buildItemRowHtml(it,i){
       +'</div>'
       +(it.includesPPN?'':'<div class="ioc-row">'
         +'<input type="checkbox" id="'+ppnId+'" '+ppnChecked+' onchange="updateItemPpn('+i+',this.checked)"><label for="'+ppnId+'">PPN 11%</label>'
+      +'</div>')
+      +(it.custom?'':'<div class="ioc-row">'
+        +'<input type="checkbox" id="'+twId+'" '+(it.twMarkupOn?'checked':'')+' onchange="updateItemTwMarkup('+i+',this.checked)"><label for="'+twId+'">Markup TW Audio &times;1.8</label>'
       +'</div>')
       +imgSizeSelAdv
       +descSizeSelAdv
