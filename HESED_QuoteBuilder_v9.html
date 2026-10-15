@@ -112,6 +112,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .block-row-thumb-text{display:flex;align-items:center;justify-content:center;font-size:12px;color:#aaa;font-weight:700}
 .block-row-info{flex:1;min-width:0}
 .block-row-title{font-size:12.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.section-move-sel{display:block;margin-top:4px;font-size:10px;color:#888;border:1px solid #eee;border-radius:5px;padding:2px 4px;background:#fafafa;max-width:100%}
 .section-rename-inp{width:100%;font-size:12.5px;font-weight:700;color:var(--ink);border:1px solid transparent;border-radius:5px;padding:3px 6px;background:transparent}
 .section-rename-inp:hover{border-color:var(--border)}
 .section-rename-inp:focus{outline:none;border-color:#1a1a1a;background:#fff}
@@ -119,6 +120,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .block-row-actions{display:flex;gap:6px;flex-shrink:0}
 .section-hdr-row td{background:#1a1a1a !important;color:#fff !important;font-weight:700;padding:7px 10px !important;font-size:10px !important;text-transform:uppercase;letter-spacing:.05em;border-bottom:none !important}
 .section-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:#f7f7f7;border:1px solid #eee;border-radius:6px}
+.section-manage-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid #eee}
 .section-bar-lbl{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.04em}
 .section-bar select{padding:6px 9px;border:1px solid #ddd;border-radius:5px;font-size:12px}
 .ppn-included-note{font-size:9px;color:#2d7a3a;font-style:italic}
@@ -389,6 +391,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
   .print-actions{flex-direction:column;align-items:stretch}
   .print-actions .btn{width:100%}
   .section-bar{flex-direction:column;align-items:stretch}
+  .section-manage-bar{flex-direction:column;align-items:stretch}
 
   /* ── Quote details card: client info first, admin details small & quiet ── */
   #quote-details-card{display:flex;flex-direction:column}
@@ -554,6 +557,12 @@ td:nth-child(4),th:nth-child(4){text-align:center}
   #pane-preview{display:block!important}
 }
 .item-opts{background:#f8f8f8;border:1px solid #eee;border-radius:6px;padding:8px 10px;margin-top:8px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.opts-toggle-btn{background:none;border:none;color:#666;font-size:11.5px;font-weight:600;cursor:pointer;padding:2px 0;display:inline-flex;align-items:center;gap:4px}
+.opts-toggle-btn:hover{color:#1a1a1a}
+.opts-toggle-btn .chev{display:inline-block;transition:transform .15s;font-size:9px}
+.opts-toggle-btn.open .chev{transform:rotate(180deg)}
+.item-opts-body{display:none;flex-wrap:wrap;gap:10px;align-items:center;width:100%;margin-top:4px}
+.item-opts-body.open{display:flex}
 .item-opt-lbl{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-right:2px}
 .item-opt-toggle{display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;color:#555;white-space:nowrap}
 .item-opt-toggle input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:#1a1a1a}
@@ -563,6 +572,8 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .item-opts-sep{width:1px;height:24px;background:#e0e0e0;margin:0 2px}
 .disc-item-inp{width:46px;text-align:center;padding:3px 4px;border:1px solid #ddd;border-radius:4px;font-size:11px;color:#1a1a1a;background:#fff}
 /* Inline item option controls inside table */
+.ioc-toggle-btn{margin-top:6px;background:none;border:none;color:#999;font-size:10px;font-weight:600;cursor:pointer;padding:2px 0}
+.ioc-toggle-btn:hover{color:#1a1a1a}
 .ioc{margin-top:6px;padding:5px 7px;background:#f8f8f8;border-radius:5px;border:1px solid #eee;display:flex;flex-direction:column;gap:4px}
 .ioc-row{display:flex;align-items:center;gap:5px;font-size:10px;color:#666}
 .ioc-row input[type=checkbox]{width:12px;height:12px;cursor:pointer;accent-color:#1a1a1a;flex-shrink:0}
@@ -820,8 +831,11 @@ td:nth-child(4),th:nth-child(4){text-align:center}
       </div>
       <!-- Item options: exchange rate, PPN, discount -->
       <div class="item-opts" id="add-opts" style="display:none">
-        <span class="item-opt-lbl">Options:</span>
         <span id="opt-sm-note" class="ppn-included-note" style="display:none">Harga Studiomaster sudah final (IDR, termasuk PPN) — FX &amp; PPN tidak berlaku</span>
+        <button type="button" class="opts-toggle-btn" id="add-opts-toggle-btn" onclick="toggleOptsPanel('add-opts-body','add-opts-toggle-btn')">
+          Pengaturan lanjutan (kurs, PPN, diskon) <span class="chev">&#9662;</span>
+        </button>
+        <div class="item-opts-body" id="add-opts-body">
         <span id="opt-fx-ppn-wrap">
         <label class="item-opt-toggle">
           <input type="checkbox" id="opt-fx-on" checked onchange="toggleOptFx()"> Exchange rate
@@ -846,6 +860,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
         <div id="opt-disc-fields" style="display:none;gap:4px;align-items:center">
           <input class="item-opt-inp" id="opt-disc-pct" type="number" placeholder="%" min="0" max="100" step="0.5" style="width:56px">
           <span style="font-size:12px;color:#555">%</span>
+        </div>
         </div>
       </div>
       <input type="hidden" id="selected-prod-code" value="">
@@ -874,7 +889,10 @@ td:nth-child(4),th:nth-child(4){text-align:center}
         </div>
         <input type="checkbox" id="c-opt-fx-on" style="display:none">
         <input type="hidden" id="c-opt-currency" value="IDR">
-        <div class="item-opts-sep"></div>
+        <button type="button" class="opts-toggle-btn" id="c-opts-toggle-btn" onclick="toggleOptsPanel('c-opts-body','c-opts-toggle-btn')">
+          Pengaturan lanjutan (PPN, diskon) <span class="chev">&#9662;</span>
+        </button>
+        <div class="item-opts-body" id="c-opts-body">
         <label class="item-opt-toggle">
           <input type="checkbox" id="c-opt-ppn-on"> PPN 11%
         </label>
@@ -885,6 +903,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
         <div id="c-opt-disc-fields" style="display:none;gap:4px;align-items:center">
           <input class="item-opt-inp" id="c-opt-disc-pct" type="number" placeholder="%" min="0" max="100" step="0.5" style="width:56px">
           <span style="font-size:12px;color:#555">%</span>
+        </div>
         </div>
       </div>
     </div>
@@ -905,16 +924,6 @@ td:nth-child(4),th:nth-child(4){text-align:center}
       <select id="section-select" onchange="onSectionSelectChange(this.value)">
         <option value="">(Umum)</option>
       </select>
-      <button type="button" class="btn-sm btn-outline" onclick="addNewSection()">+ Bagian / Ruangan Baru</button>
-      <button type="button" class="btn-sm btn-outline" onclick="enterSectionReorderMode()" id="section-reorder-btn">&#9998; Edit / Urutkan Bagian</button>
-    </div>
-    <div id="section-reorder-panel" style="display:none;margin-bottom:14px">
-      <div class="section-bar-lbl" style="display:block;margin-bottom:8px">Ubah nama dan/atau geser untuk mengurutkan halaman Daftar Barang di dokumen — bisa dilakukan kapan saja, termasuk bagian yang sudah berisi produk:</div>
-      <div id="section-reorder-list"></div>
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <button type="button" class="btn-sm btn-dark" onclick="confirmSectionReorder()">Selesai</button>
-        <button type="button" class="btn-sm btn-outline" onclick="cancelSectionReorder()">Batal</button>
-      </div>
     </div>
     <table class="items-table">
       <thead><tr>
@@ -932,6 +941,23 @@ td:nth-child(4),th:nth-child(4){text-align:center}
         <tr><td colspan="9" class="empty-state">Belum ada produk &mdash; tambahkan di atas</td></tr>
       </tbody>
     </table>
+    <!-- Section management lives below the list, out of the way of the
+         everyday add-product flow — moving an item between sections is
+         now done per-row (the pin dropdown next to each product), so
+         these buttons are only needed to create/rename/delete/reorder
+         the sections themselves. -->
+    <div class="section-manage-bar">
+      <button type="button" class="btn-sm btn-outline" onclick="addNewSection()">+ Bagian / Ruangan Baru</button>
+      <button type="button" class="btn-sm btn-outline" onclick="enterSectionReorderMode()" id="section-reorder-btn">&#9998; Edit / Urutkan / Hapus Bagian</button>
+    </div>
+    <div id="section-reorder-panel" style="display:none;margin-top:10px">
+      <div class="section-bar-lbl" style="display:block;margin-bottom:8px">Ubah nama, hapus, atau geser untuk mengurutkan halaman Daftar Barang di dokumen — bisa dilakukan kapan saja, termasuk bagian yang sudah berisi produk:</div>
+      <div id="section-reorder-list"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button type="button" class="btn-sm btn-dark" onclick="confirmSectionReorder()">Selesai</button>
+        <button type="button" class="btn-sm btn-outline" onclick="cancelSectionReorder()">Batal</button>
+      </div>
+    </div>
   </div>
 
   <div class="card" id="custom-content-card">
@@ -1823,6 +1849,13 @@ let sectionList=[''];
 let dragSrcIdx=null;
 let dragSrcCtx=null;
 let customBlocks=[];
+// Which item rows have their advanced FX/PPN/size controls expanded —
+// transient UI state only, not saved with the quote. Keyed by item index.
+let expandedIocRows={};
+function toggleRowIoc(i){
+  expandedIocRows[i]=!expandedIocRows[i];
+  renderAll();
+}
 
 /* ---- Background draft autosave (localStorage, this browser only) ----
    Separate from "Save to history": this exists purely so an accidental tab
@@ -1943,19 +1976,43 @@ function renderSectionReorderList(){
   items.forEach(function(it){used[it.section||'']=true;});
   var wrap=document.getElementById('section-reorder-list');
   wrap.innerHTML=sectionList.map(function(s,i){
-    var unused=!used[s]?' <span style="color:#bbb;font-size:10px">(tidak dipakai)</span>':'';
+    var count=items.filter(function(it){return (it.section||'')===s;}).length;
+    var unused=!count?' <span style="color:#bbb;font-size:10px">(tidak dipakai)</span>':' <span style="color:#bbb;font-size:10px">('+count+' produk)</span>';
     // The blank "(Umum)" bucket is the fixed default — every section name
-    // besides it can be renamed in place, items and content blocks follow.
+    // besides it can be renamed or deleted; items and content blocks follow.
     var titleHtml=s
       ?'<input type="text" class="section-rename-inp" value="'+escapeHtml(s)+'" onchange="renameSection('+i+',this.value)">'
       :'<div class="block-row-title">(Umum)</div>';
+    var delBtn=s?'<button type="button" class="btn-sm btn-del" onclick="deleteSection('+i+')" title="Hapus bagian ini">Hapus</button>':'';
     return '<div class="block-row" draggable="true" data-idx="'+i+'" '
       +'ondragstart="dragStart(event,'+i+',\'sections\')" ondragover="dragOverRow(event)" '
       +'ondragleave="dragLeaveRow(event)" ondrop="dropRow(event,'+i+',\'sections\')" ondragend="dragEndRow()">'
       +'<span class="drag-grip" title="Geser untuk mengurutkan ulang">&#10247;</span>'
       +'<div class="block-row-info">'+titleHtml+unused+'</div>'
+      +'<div class="block-row-actions">'+delBtn+'</div>'
     +'</div>';
   }).join('');
+}
+
+// Deleting a section moves its products back to (Umum) rather than
+// deleting them — a section/room is just a grouping label, never a
+// reason to lose products the user already priced and described.
+function deleteSection(i){
+  var name=sectionList[i];
+  if(!name)return;
+  var count=items.filter(function(it){return (it.section||'')===name;}).length;
+  var msg=count>0
+    ?('Hapus bagian "'+name+'"? '+count+' produk di dalamnya akan dipindah ke (Umum).')
+    :('Hapus bagian "'+name+'"?');
+  if(!confirm(msg))return;
+  items.forEach(function(it){ if((it.section||'')===name) it.section=''; });
+  customBlocks.forEach(function(b){ if(b.afterKey===name) b.afterKey=''; });
+  sectionList.splice(i,1);
+  if(currentSection===name) currentSection='';
+  refreshSectionSelect();
+  renderSectionReorderList();
+  renderAll();
+  renderBlocksList();
 }
 
 // Renaming a section carries every item and content block referencing the
@@ -2009,6 +2066,7 @@ function addNewSection(){
   }
   currentSection=name;
   refreshSectionSelect();
+  renderAll(); // so every item row's "pindah ke bagian" dropdown picks up the new option
 }
 
 function refreshSectionSelect(){
@@ -3214,6 +3272,16 @@ function unitFinal(it){
   return d>0?Math.round(u*(1-d/100)):u;
 }
 
+// Generic expand/collapse for the "Pengaturan lanjutan" panels (add-product
+// forms) — collapsed by default so the everyday add flow is just
+// search/select → qty → Add, without kurs/PPN/diskon cluttering the view.
+function toggleOptsPanel(bodyId,btnId){
+  var body=document.getElementById(bodyId);
+  var btn=document.getElementById(btnId);
+  if(!body)return;
+  var open=body.classList.toggle('open');
+  if(btn)btn.classList.toggle('open',open);
+}
 function toggleOptFx(){
   var on=document.getElementById('opt-fx-on').checked;
   document.getElementById('opt-fx-fields').style.display=on?'flex':'none';
@@ -3338,6 +3406,11 @@ function updateItemName(i,v){
   var name=v.trim()||items[i].code;
   items[i].code=name;
   items[i].displayName=name;
+  renderAll();
+}
+function moveItemToSection(i,val){
+  if(!items[i])return;
+  items[i].section=val;
   renderAll();
 }
 
@@ -3634,6 +3707,15 @@ function renderAll(){
     var nameCellHtml=it.custom
       ?'<input class="ioc-inp" style="width:100%;font-weight:600" type="text" value="'+escapeHtml(it.code)+'" onchange="updateItemName('+i+',this.value)" title="Edit nama barang">'
       :'<strong>'+escapeHtml(it.code)+'</strong>';
+    // Per-item section picker — moving a product between sections/rooms is
+    // meant to be effortless: pick a new one here, no drag-and-drop needed.
+    var itSec=it.section||'';
+    var sectionMoveHtml='<select class="section-move-sel" onchange="moveItemToSection('+i+',this.value)" title="Pindahkan ke bagian/ruangan lain">'
+      +'<option value=""'+(itSec===''?' selected':'')+'>&#128205; (Umum)</option>'
+      +sectionList.filter(function(s){return s;}).map(function(s){
+        return '<option value="'+escapeHtml(s)+'"'+(itSec===s?' selected':'')+'>&#128205; '+escapeHtml(s)+'</option>';
+      }).join('')
+    +'</select>';
     var descVal=escapeHtml(it.desc||'');
     var specsVal=escapeHtml(it.specs||'');
     var descEditHtml='<textarea class="desc-edit" placeholder="Deskripsi produk..." onchange="updateItemDesc('+i+',this.value)">'+descVal+'</textarea>';
@@ -3747,9 +3829,14 @@ function renderAll(){
       +imgSizeSelAdv
       +descSizeSelAdv
     +'</div>';
+    // Collapsed by default — the breakdown text above already shows what's
+    // applied; the checkboxes/selects themselves are only needed when the
+    // user actually wants to change FX/PPN/sizing for this one item.
+    var iocOpen=!!expandedIocRows[i];
+    var iocToggleHtml='<button type="button" class="ioc-toggle-btn" onclick="toggleRowIoc('+i+')">'+(iocOpen?'&#9652; Tutup':'&#9881; Lainnya')+'</button>';
 
     var rowHtml='<tr draggable="true" data-idx="'+i+'" ondragstart="dragStart(event,'+i+')" ondragover="dragOverRow(event)" ondragleave="dragLeaveRow(event)" ondrop="dropRow(event,'+i+')" ondragend="dragEndRow()">'
-      +'<td data-label="Produk"><span class="drag-grip" title="Geser untuk mengurutkan ulang">&#10247;</span>'+nameCellHtml+'<div style="font-size:10px;color:#aaa;margin-top:2px">'+it.series+'</div>'+badge+stockBadgeHtml(it.code)+'</td>'
+      +'<td data-label="Produk"><span class="drag-grip" title="Geser untuk mengurutkan ulang">&#10247;</span>'+nameCellHtml+'<div style="font-size:10px;color:#aaa;margin-top:2px">'+it.series+'</div>'+badge+stockBadgeHtml(it.code)+sectionMoveHtml+'</td>'
       +'<td data-label="Gambar" style="text-align:center;vertical-align:top">'+imgCellHtml+'</td>'
       +'<td data-label="Deskripsi" style="vertical-align:top">'+descEditHtml+'</td>'
       +'<td data-label="Spesifikasi" style="vertical-align:top">'+specsEditHtml+'</td>'
@@ -3758,7 +3845,7 @@ function renderAll(){
         +'<input class="'+discInpClass+'" type="number" value="'+discInpVal+'" placeholder="'+discPlaceholder+'" min="0" max="100" step="0.5" onchange="updateItemDisc('+i+',this.value)" title="Disc %">'
         +'<span class="disc-item-lbl">%</span>'
       +'</td>'
-      +'<td data-label="Harga" style="vertical-align:top">'+unitBreakdown+inlineControls+'</td>'
+      +'<td data-label="Harga" style="vertical-align:top">'+unitBreakdown+iocToggleHtml+(iocOpen?inlineControls:'')+'</td>'
       +'<td data-label="Harga Qty" style="vertical-align:top">'+totalBreakdown+'</td>'
       +'<td data-label=""><button class="btn-sm btn-del" onclick="removeItem('+i+')">\u2715</button></td>'
       +'</tr>';
