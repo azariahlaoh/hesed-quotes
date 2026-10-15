@@ -9,6 +9,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- Parses uploaded stock spreadsheets (.xlsx/.csv) client-side — see uploadStockFile() -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Writes the "Export to Excel" quotation file — SheetJS's free build above
+     can read spreadsheets but can't write cell styles (bold, number format),
+     so the export path uses ExcelJS instead. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <style>
 :root{
   --ink:#1a1a1a; --muted:#86868b; --border:#e5e5e7; --bg:#f5f5f7;
@@ -112,13 +116,21 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .block-row-thumb-text{display:flex;align-items:center;justify-content:center;font-size:12px;color:#aaa;font-weight:700}
 .block-row-info{flex:1;min-width:0}
 .block-row-title{font-size:12.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.section-move-sel{display:block;margin-top:4px;font-size:10px;color:#888;border:1px solid #eee;border-radius:5px;padding:2px 4px;background:#fafafa;max-width:100%}
 .section-rename-inp{width:100%;font-size:12.5px;font-weight:700;color:var(--ink);border:1px solid transparent;border-radius:5px;padding:3px 6px;background:transparent}
 .section-rename-inp:hover{border-color:var(--border)}
 .section-rename-inp:focus{outline:none;border-color:#1a1a1a;background:#fff}
 .block-row-meta{font-size:10.5px;color:var(--muted)}
 .block-row-actions{display:flex;gap:6px;flex-shrink:0}
 .section-hdr-row td{background:#1a1a1a !important;color:#fff !important;font-weight:700;padding:7px 10px !important;font-size:10px !important;text-transform:uppercase;letter-spacing:.05em;border-bottom:none !important}
+.section-hdr-row td.section-hdr-td{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.section-hdr-row.drag-over td{outline:2px dashed #fff;outline-offset:-4px}
+.section-empty-row.drag-over td{outline:2px dashed #999;outline-offset:-4px}
+.section-hdr-label{display:inline-flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:0}
+.section-hdr-inp{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);color:#fff;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;padding:4px 8px;border-radius:4px;min-width:90px}
+.section-hdr-inp:focus{outline:none;border-color:#fff;background:rgba(255,255,255,.18)}
+.section-hdr-del{background:none;border:1px solid rgba(255,255,255,.4);color:#fff;font-size:9px;text-transform:uppercase;letter-spacing:.05em;padding:4px 9px;border-radius:4px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.section-hdr-del:hover{background:rgba(255,255,255,.18)}
+.section-hdr-hint{font-size:11px;color:#999;cursor:help;flex-shrink:0}
 .section-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:#f7f7f7;border:1px solid #eee;border-radius:6px}
 .section-manage-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid #eee}
 .section-bar-lbl{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.04em}
@@ -2254,6 +2266,12 @@ function dropRow(e,i,ctx){
   document.querySelectorAll('#tbody tr,#blocks-list .block-row,#section-reorder-list .block-row').forEach(function(r){r.classList.remove('drag-over');});
   if(dragSrcIdx===null||dragSrcCtx!==ctx||dragSrcIdx===i){dragSrcIdx=null;dragSrcCtx=null;return;}
   var arr=ctx==='blocks'?customBlocks:(ctx==='sections'?sectionList:items);
+  if(ctx==='items'){
+    // Dropping a product onto another product's row also adopts that
+    // row's section — this is how drag-and-drop moves products between
+    // sections, not just reorders them within one.
+    arr[dragSrcIdx].section=arr[i].section||'';
+  }
   var moved=arr.splice(dragSrcIdx,1)[0];
   arr.splice(i,0,moved);
   dragSrcIdx=null;dragSrcCtx=null;
@@ -2262,8 +2280,41 @@ function dropRow(e,i,ctx){
   else renderAll();
 }
 function dragEndRow(){
-  document.querySelectorAll('#tbody tr,#blocks-list .block-row,#section-reorder-list .block-row').forEach(function(r){r.classList.remove('drag-over','dragging');});
+  document.querySelectorAll('#tbody tr,#blocks-list .block-row,#section-reorder-list .block-row,.section-hdr-row').forEach(function(r){r.classList.remove('drag-over','dragging');});
   dragSrcIdx=null;dragSrcCtx=null;
+}
+
+// Dropping onto a section's header bar: a dragged product row moves into
+// that section (works for an empty section too, which has no rows of its
+// own to drop onto); a dragged image FILE from the desktop is attached as
+// a content image for that section instead, via the same crop tool used
+// for product photos — no need to open the separate "Konten tambahan" form.
+function dropOnSectionHeader(e,secIdx){
+  e.preventDefault();
+  document.querySelectorAll('.section-hdr-row').forEach(function(r){r.classList.remove('drag-over');});
+  var secKey=secIdx>=0&&sectionList[secIdx]!==undefined?sectionList[secIdx]:'';
+  if(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length){
+    handleSectionImageDrop(e.dataTransfer.files[0],secKey);
+    dragSrcIdx=null;dragSrcCtx=null;
+    return;
+  }
+  if(dragSrcIdx===null||dragSrcCtx!=='items'){dragSrcIdx=null;dragSrcCtx=null;return;}
+  items[dragSrcIdx].section=secKey;
+  dragSrcIdx=null;dragSrcCtx=null;
+  renderAll();
+}
+
+function handleSectionImageDrop(file,secKey){
+  openCropModal(file,function(dataUri){
+    customBlocks.push({
+      id:genBlockId(), type:'image',
+      title:'', caption:'',
+      image:dataUri,
+      afterKey:secKey
+    });
+    renderBlocksList();
+    renderAll();
+  },1400);
 }
 
 function downloadBlob(blob, filename){
@@ -2428,11 +2479,14 @@ function exportToWord(){
   }
 }
 
-// Excel export — final numbers only, no formulas. Each cell is written as
-// a plain value (XLSX.utils.aoa_to_sheet never emits a formula string),
-// so the sheet is safe to hand to a client who shouldn't see the markup.
-function exportToExcel(){
+// Excel export — final numbers only, no formulas: every cell is a plain
+// value/string, never an ExcelJS formula object. Headings are bold and
+// money columns use Rupiah number formatting (ExcelJS, not the SheetJS
+// build above — the free SheetJS build can't write cell styles at all).
+var RP_FMT='"Rp" #,##0';
+async function exportToExcel(){
   if(!items.length){alert('Tambahkan produk dahulu di tab Builder.');return;}
+  if(typeof ExcelJS==='undefined'){alert('Pustaka Excel belum termuat — cek koneksi internet lalu coba lagi.');return;}
   try{
     var ref=getRef()||'Quotation';
     var client=document.getElementById('client').value||'';
@@ -2442,24 +2496,35 @@ function exportToExcel(){
     var date=document.getElementById('qt-date').value||idDate();
     var sectionGroups=groupBySection(items);
 
-    var rows=[];
-    rows.push(['QUOTATION']);
-    rows.push(['No. Quotation',ref]);
-    rows.push(['Tanggal',date]);
-    rows.push(['Kepada Yth.',contact+(client?' / '+client:'')]);
-    rows.push(['Alamat',address]);
-    if(project)rows.push(['Proyek',project]);
-    rows.push([]);
+    var wb=new ExcelJS.Workbook();
+    var ws=wb.addWorksheet('Quotation');
+    ws.columns=[{width:24},{width:42},{width:32},{width:7},{width:16},{width:9},{width:18}];
+
+    function addRow(vals,opts){
+      opts=opts||{};
+      var row=ws.addRow(vals);
+      if(opts.bold)row.font={bold:true};
+      (opts.moneyCols||[]).forEach(function(col){ row.getCell(col).numFmt=RP_FMT; });
+      return row;
+    }
+
+    addRow(['QUOTATION'],{bold:true});
+    addRow(['No. Quotation',ref]);
+    addRow(['Tanggal',date]);
+    addRow(['Kepada Yth.',contact+(client?' / '+client:'')]);
+    addRow(['Alamat',address]);
+    if(project)addRow(['Proyek',project]);
+    addRow([]);
 
     sectionGroups.forEach(function(g){
-      if(g.name)rows.push(['Daftar Barang — '+g.name]);
-      rows.push(['Produk','Deskripsi','Spesifikasi','Qty','Harga Satuan','Disc %','Total']);
+      if(g.name)addRow(['Daftar Barang — '+g.name],{bold:true});
+      addRow(['Produk','Deskripsi','Spesifikasi','Qty','Harga Satuan','Disc %','Total'],{bold:true});
       var subtotal=0;
       g.items.forEach(function(it){
         var uShow=unitFinal(it);
         var totalShow=uShow*it.qty;
         subtotal+=totalShow;
-        rows.push([
+        addRow([
           it.displayName||it.code,
           it.desc||'',
           it.specs||'',
@@ -2467,20 +2532,18 @@ function exportToExcel(){
           uShow,
           parseFloat(it.itemDisc)||0,
           totalShow
-        ]);
+        ],{moneyCols:[5,7]});
       });
-      rows.push(['','','','','','Subtotal'+(g.name?' — '+g.name:''),subtotal]);
-      rows.push([]);
+      addRow(['','','','','','Subtotal'+(g.name?' — '+g.name:''),subtotal],{bold:true,moneyCols:[7]});
+      addRow([]);
     });
 
-    rows.push(['','','','','','Harga Total',calcTotals().grand]);
+    addRow(['','','','','','Harga Total',calcTotals().grand],{bold:true,moneyCols:[7]});
 
-    var ws=XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols']=[{wch:22},{wch:40},{wch:30},{wch:6},{wch:14},{wch:9},{wch:16}];
-    var wb=XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,ws,'Quotation');
+    var buf=await wb.xlsx.writeBuffer();
+    var blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     var refName=ref.replace(/[^a-zA-Z0-9_-]/g,'_');
-    XLSX.writeFile(wb,refName+'.xlsx');
+    downloadBlob(blob,refName+'.xlsx');
   }catch(e){
     console.error('Excel export failed',e);
     alert('Gagal membuat file Excel. Coba lagi.');
@@ -3213,9 +3276,13 @@ function resolveQuickAddAmbiguous(i,code){
 
 function commitQuickAdd(){
   var added=0, skipped=0;
+  // Same defaults as the regular catalog Add button (FX + PPN on) —
+  // addProductToItems already zeroes these back out for Studiomaster
+  // products, so this is safe to pass unconditionally.
+  var defaultOpts={fxOn:true,fxRate:globalFxRate,fxCurrency:'EUR',ppnOn:true,itemDisc:0};
   quickAddParsed.forEach(function(r){
     if(r.status!=='matched'||!r.product){skipped++;return;}
-    addProductToItems(r.product,r.qty,null);
+    addProductToItems(r.product,r.qty,{fxOn:defaultOpts.fxOn,fxRate:defaultOpts.fxRate,fxCurrency:defaultOpts.fxCurrency,ppnOn:defaultOpts.ppnOn,itemDisc:defaultOpts.itemDisc});
     added++;
   });
   document.getElementById('quick-add-text').value='';
@@ -3252,12 +3319,25 @@ function addCustomItem(){
 }
 
 
+// TW Audio (and TW Audio Install) catalog items carry a fixed 1.8x markup
+// over the EUR-converted cost, applied automatically before PPN and
+// discount — Studiomaster (already final IDR pricing) and custom/IDR-direct
+// items are never marked up this way.
+var TW_MARKUP=1.8;
+function isTwMarkupItem(it){
+  if(it.custom)return false;
+  var s=it.series||'';
+  return s.indexOf('SM-')!==0;
+}
+
 // Compute unit price based on item's own options (fx, ppn, disc)
 function unitIdr(it){
   var p=it.catalogPrice!=null?it.catalogPrice:(it.idrDirect!=null?it.idrDirect:(it.eurPrice!=null?it.eurPrice:(it.idrPrice||0)));
   var result=p;
   // Apply exchange rate if on
   if(it.fxOn && it.fxRate>0) result=result*it.fxRate;
+  // TW Audio markup — always on, before PPN and discount
+  if(isTwMarkupItem(it)) result=result*TW_MARKUP;
   // Apply PPN if on — but never for items whose catalog price already includes PPN
   // (e.g. Studiomaster — the pricelist is already PPN-inclusive and in IDR)
   if(it.ppnOn && !it.includesPPN) result=result*1.11;
@@ -3406,11 +3486,6 @@ function updateItemName(i,v){
   var name=v.trim()||items[i].code;
   items[i].code=name;
   items[i].displayName=name;
-  renderAll();
-}
-function moveItemToSection(i,val){
-  if(!items[i])return;
-  items[i].section=val;
   renderAll();
 }
 
@@ -3691,12 +3766,66 @@ function renderAll(){
     tb.innerHTML='<tr><td colspan="9" class="empty-state">Belum ada produk \u2014 tambahkan di atas</td></tr>';
     updateTots();return;
   }
-  var distinctSecs={};
-  items.forEach(function(it){distinctSecs[it.section||'']=true;});
-  var secKeys=Object.keys(distinctSecs);
-  var showSectionHeaders = secKeys.length>1 || (secKeys.length===1 && secKeys[0]!=='');
-  var lastSectionKey=null;
-  tb.innerHTML=items.map(function(it,i){
+  // Group by section for display — independent of each item's position in
+  // the flat `items` array, so moving a product between sections (drag or
+  // otherwise) always shows it under the right header, nothing needs to
+  // be re-sorted in the underlying array. `i` stays the item's real index
+  // into `items`, so every existing per-row handler keeps working.
+  var withIdx=items.map(function(it,i){return {it:it,i:i};});
+  var secMap={};
+  withIdx.forEach(function(pair){
+    var key=pair.it.section||'';
+    if(!(key in secMap))secMap[key]=[];
+    secMap[key].push(pair);
+  });
+  // Every declared section gets a header — even an empty, brand-new one —
+  // so it's a visible drop target right away instead of only appearing
+  // once it already has a product in it.
+  var secOrder=sectionList.slice();
+  Object.keys(secMap).forEach(function(k){ if(secOrder.indexOf(k)<0)secOrder.push(k); });
+  var showSectionHeaders = secOrder.length>1 || (secOrder.length===1 && secOrder[0]!=='');
+
+  tb.innerHTML=secOrder.map(function(secKey){
+    var headerHtml=showSectionHeaders?buildSectionHeaderRow(secKey):'';
+    var pairs=secMap[secKey]||[];
+    var rowsHtml=pairs.map(function(pair){
+      return buildItemRowHtml(pair.it,pair.i);
+    }).join('');
+    if(showSectionHeaders && !pairs.length){
+      var secIdx=sectionList.indexOf(secKey);
+      rowsHtml='<tr class="section-empty-row" '
+        +'ondragover="event.preventDefault();this.classList.add(\'drag-over\')" '
+        +'ondragleave="this.classList.remove(\'drag-over\')" '
+        +'ondrop="dropOnSectionHeader(event,'+secIdx+')">'
+        +'<td colspan="9" class="empty-state" style="padding:14px">Belum ada produk di bagian ini — seret produk ke sini, atau ke bar hitam di atas</td></tr>';
+    }
+    return headerHtml+rowsHtml;
+  }).join('');
+  updateTots();
+}
+
+// A section's black header bar — editable name, delete, and a drop target
+// for both an item row (drag it here to move it into this section) and an
+// actual image file dragged in from the desktop (attaches as a content
+// image for this section, skipping the separate "Konten tambahan" form).
+function buildSectionHeaderRow(secKey){
+  var secIdx=sectionList.indexOf(secKey);
+  var labelHtml=secKey
+    ? ('Bagian / Ruangan: <input type="text" class="section-hdr-inp" value="'+escapeHtml(secKey)+'" onchange="renameSection('+secIdx+',this.value)" onclick="event.stopPropagation()">')
+    : 'Umum';
+  var delBtn=secKey?'<button type="button" class="section-hdr-del" onclick="deleteSection('+secIdx+')">Hapus bagian</button>':'';
+  return '<tr class="section-hdr-row" '
+    +'ondragover="event.preventDefault();this.classList.add(\'drag-over\')" '
+    +'ondragleave="this.classList.remove(\'drag-over\')" '
+    +'ondrop="dropOnSectionHeader(event,'+secIdx+')">'
+    +'<td colspan="9" class="section-hdr-td"><span class="section-hdr-label">'+labelHtml
+      +'<span class="section-hdr-hint" title="Seret gambar (mis. EASE Focus .bmp) ke sini untuk lampirkan ke bagian ini">&#128247;</span></span>'
+      +delBtn
+    +'</td>'
+  +'</tr>';
+}
+
+function buildItemRowHtml(it,i){
     var u=unitIdr(it);
     var itemPct=parseFloat(it.itemDisc)||0;
     var effPct=itemPct;
@@ -3707,15 +3836,6 @@ function renderAll(){
     var nameCellHtml=it.custom
       ?'<input class="ioc-inp" style="width:100%;font-weight:600" type="text" value="'+escapeHtml(it.code)+'" onchange="updateItemName('+i+',this.value)" title="Edit nama barang">'
       :'<strong>'+escapeHtml(it.code)+'</strong>';
-    // Per-item section picker — moving a product between sections/rooms is
-    // meant to be effortless: pick a new one here, no drag-and-drop needed.
-    var itSec=it.section||'';
-    var sectionMoveHtml='<select class="section-move-sel" onchange="moveItemToSection('+i+',this.value)" title="Pindahkan ke bagian/ruangan lain">'
-      +'<option value=""'+(itSec===''?' selected':'')+'>&#128205; (Umum)</option>'
-      +sectionList.filter(function(s){return s;}).map(function(s){
-        return '<option value="'+escapeHtml(s)+'"'+(itSec===s?' selected':'')+'>&#128205; '+escapeHtml(s)+'</option>';
-      }).join('')
-    +'</select>';
     var descVal=escapeHtml(it.desc||'');
     var specsVal=escapeHtml(it.specs||'');
     var descEditHtml='<textarea class="desc-edit" placeholder="Deskripsi produk..." onchange="updateItemDesc('+i+',this.value)">'+descVal+'</textarea>';
@@ -3743,7 +3863,8 @@ function renderAll(){
     // Price breakdown for builder view
     var catP=it.catalogPrice!=null?it.catalogPrice:u;
     var fxCur=it.fxOn&&it.fxCurrency?it.fxCurrency:'';
-    var hasAnyCalc=it.fxOn||it.ppnOn||effPct>0||it.includesPPN;
+    var isTwMarkup=isTwMarkupItem(it);
+    var hasAnyCalc=it.fxOn||it.ppnOn||effPct>0||it.includesPPN||isTwMarkup;
     // Custom items can have their base price edited after adding — the
     // price was hand-typed in the first place, so there's no catalog
     // list to protect the way there is for catalog products.
@@ -3760,16 +3881,22 @@ function renderAll(){
       unitBreakdown+='<br><span style="font-size:9px;color:#ccc">pilih FX / PPN / Disc</span>';
     } else {
       // FX step
+      var runningBase=catP;
       if(it.fxOn&&it.fxRate>0){
+        runningBase=Math.round(catP*it.fxRate);
         unitBreakdown+='<span class="pb-base">'+fxCur+' '+catP.toLocaleString('id-ID')+'</span>';
-        unitBreakdown+='<br><span class="pb-base">×'+it.fxRate.toLocaleString('id-ID')+' = '+fmt(Math.round(catP*it.fxRate))+'</span>';
+        unitBreakdown+='<br><span class="pb-base">×'+it.fxRate.toLocaleString('id-ID')+' = '+fmt(runningBase)+'</span>';
       } else {
         unitBreakdown+='<span class="pb-base">'+fmt(catP)+'</span>';
       }
+      // TW Audio markup step — always applied, before PPN/discount
+      if(isTwMarkup){
+        runningBase=Math.round(runningBase*TW_MARKUP);
+        unitBreakdown+='<br><span class="pb-base">&times;'+TW_MARKUP+' (markup TW Audio) = '+fmt(runningBase)+'</span>';
+      }
       // PPN step
       if(it.ppnOn && !it.includesPPN){
-        var baseForPpn=it.fxOn&&it.fxRate>0?Math.round(catP*it.fxRate):catP;
-        unitBreakdown+='<br><span class="pb-ppn">PPN 11%: +'+fmt(Math.round(baseForPpn*0.11))+'</span>';
+        unitBreakdown+='<br><span class="pb-ppn">PPN 11%: +'+fmt(Math.round(runningBase*0.11))+'</span>';
       } else if(it.includesPPN){
         unitBreakdown+='<br><span class="ppn-included-note">Harga sudah termasuk PPN 11%</span>';
       }
@@ -3835,8 +3962,12 @@ function renderAll(){
     var iocOpen=!!expandedIocRows[i];
     var iocToggleHtml='<button type="button" class="ioc-toggle-btn" onclick="toggleRowIoc('+i+')">'+(iocOpen?'&#9652; Tutup':'&#9881; Lainnya')+'</button>';
 
+    // Dropping this row onto another row adopts that row's section too \u2014
+    // dragging a product into a different section's block of rows is how
+    // products move between sections now (plus dropping straight onto a
+    // section's header bar, including an empty one).
     var rowHtml='<tr draggable="true" data-idx="'+i+'" ondragstart="dragStart(event,'+i+')" ondragover="dragOverRow(event)" ondragleave="dragLeaveRow(event)" ondrop="dropRow(event,'+i+')" ondragend="dragEndRow()">'
-      +'<td data-label="Produk"><span class="drag-grip" title="Geser untuk mengurutkan ulang">&#10247;</span>'+nameCellHtml+'<div style="font-size:10px;color:#aaa;margin-top:2px">'+it.series+'</div>'+badge+stockBadgeHtml(it.code)+sectionMoveHtml+'</td>'
+      +'<td data-label="Produk"><span class="drag-grip" title="Geser untuk memindahkan/mengurutkan ulang">&#10247;</span>'+nameCellHtml+'<div style="font-size:10px;color:#aaa;margin-top:2px">'+it.series+'</div>'+badge+stockBadgeHtml(it.code)+'</td>'
       +'<td data-label="Gambar" style="text-align:center;vertical-align:top">'+imgCellHtml+'</td>'
       +'<td data-label="Deskripsi" style="vertical-align:top">'+descEditHtml+'</td>'
       +'<td data-label="Spesifikasi" style="vertical-align:top">'+specsEditHtml+'</td>'
@@ -3849,16 +3980,7 @@ function renderAll(){
       +'<td data-label="Harga Qty" style="vertical-align:top">'+totalBreakdown+'</td>'
       +'<td data-label=""><button class="btn-sm btn-del" onclick="removeItem('+i+')">\u2715</button></td>'
       +'</tr>';
-
-    var secKey=it.section||'';
-    var sectionHdr='';
-    if(showSectionHeaders && secKey!==lastSectionKey){
-      sectionHdr='<tr class="section-hdr-row"><td colspan="9">'+(secKey?('Bagian / Ruangan: '+escapeHtml(secKey)):'Umum')+'</td></tr>';
-    }
-    lastSectionKey=secKey;
-    return sectionHdr+rowHtml;
-  }).join('');
-  updateTots();
+    return rowHtml;
 }
 
 function calcTotals(){
