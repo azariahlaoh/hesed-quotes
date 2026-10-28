@@ -709,6 +709,15 @@ td:nth-child(4),th:nth-child(4){text-align:center}
     <div class="grid-full">
       <div class="field"><label>Project description (Proyek)</label><textarea id="project" placeholder="e.g. Pengadaan Sound System Gereja Bethany Manado" oninput="onClientFieldEdit()"></textarea></div>
     </div>
+    <div class="grid-full">
+      <div class="field">
+        <label>Cara pembayaran (muncul di Syarat &amp; Ketentuan)</label>
+        <select id="payment-terms" onchange="onPaymentTermsChange(this.value)">
+          <option value="5050">50% uang muka, 50% sisanya sebelum pengiriman (default)</option>
+          <option value="40-60x6">40% uang muka, 60% dicicil 6x selama 6 bulan</option>
+        </select>
+      </div>
+    </div>
     <div class="client-actions" id="client-actions" style="display:none">
       <button class="btn-save-client" onclick="saveClient()">&#128190; Save client</button>
       <span id="client-saved-badge" class="client-saved-badge" style="display:none">&#10003; Saved</span>
@@ -1865,6 +1874,20 @@ let sectionList=[''];
 let dragSrcIdx=null;
 let dragSrcCtx=null;
 let customBlocks=[];
+// Payment terms — which "Cara pembayaran" clause prints under Syarat &
+// Ketentuan I. Saved with the quote (history/draft), since it's a real
+// term of the deal, not just a display preference.
+let paymentTerms='5050';
+function onPaymentTermsChange(v){
+  paymentTerms=(v==='40-60x6')?'40-60x6':'5050';
+  scheduleDraftSave();
+}
+function paymentTermsClause(){
+  if(paymentTerms==='40-60x6'){
+    return 'Cara pembayaran adalah 40% sebagai uang muka dan 60% sisanya dicicil dalam 6 (enam) kali pembayaran selama 6 (enam) bulan, dimulai pada bulan berikutnya setelah pembayaran uang muka.';
+  }
+  return 'Cara pembayaran adalah 50% dari Harga Total sebagai uang muka dan 50% sisanya dari Harga Total sebelum pengiriman barang untuk diserahterimakan dari PT Hesed Kharis Indonesia kepada pembeli.';
+}
 // Which item rows have their advanced FX/PPN/size controls expanded —
 // transient UI state only, not saved with the quote. Keyed by item index.
 let expandedIocRows={};
@@ -1901,6 +1924,7 @@ function saveDraftNow(){
       items:items,
       section_list:sectionList,
       custom_blocks:customBlocks,
+      payment_terms:paymentTerms,
       saved_at:new Date().toISOString()
     };
     localStorage.setItem(DRAFT_KEY,JSON.stringify(draft));
@@ -1935,6 +1959,8 @@ function restoreDraft(){
   items=d.items||[];
   sectionList=(d.section_list&&d.section_list.length)?d.section_list:[''];
   customBlocks=d.custom_blocks||[];
+  paymentTerms=d.payment_terms||'5050';
+  document.getElementById('payment-terms').value=paymentTerms;
   updateRef();
   refreshSectionSelect();
   renderAll();
@@ -2447,7 +2473,7 @@ function buildRtfString(){
 
   tnc('I. Harga & Pembayaran',[
     'Harga atas barang-barang yang tertulis dalam Quotation yang dikeluarkan oleh PT Hesed Kharis Indonesia kepada Pihak Pembeli adalah mengikat dan berlaku selama 14 (empat belas) hari terhitung dari tanggal Quotation.',
-    'Cara pembayaran adalah 50% dari Harga Total sebagai uang muka dan 50% sisanya dari Harga Total sebelum pengiriman barang untuk diserahterimakan dari PT Hesed Kharis Indonesia kepada pembeli.',
+    paymentTermsClause(),
     'Harga barang adalah merupakan harga yang berlaku di dalam daerah pengiriman terbatas di wilayah DKI Jakarta, Bogor, Tangerang dan Bekasi.'
   ]);
   tnc('II. Serah Terima Barang',[
@@ -4189,7 +4215,7 @@ function buildDoc(){
     +'<div class="tnc-page-title">Syarat dan Ketentuan</div>'
     +'<div class="tnc-sec"><div class="tnc-sec-hd">I. Harga &amp; Pembayaran</div><ol>'
       +'<li>Harga atas barang-barang yang tertulis dalam Quotation yang dikeluarkan oleh PT Hesed Kharis Indonesia kepada Pihak Pembeli adalah mengikat dan berlaku selama 14 (empat belas) hari terhitung dari tanggal Quotation.</li>'
-      +'<li>Cara pembayaran adalah 50% dari Harga Total sebagai uang muka dan 50% sisanya dari Harga Total sebelum pengiriman barang untuk diserahterimakan dari PT Hesed Kharis Indonesia kepada pembeli.</li>'
+      +'<li>'+escapeHtml(paymentTermsClause())+'</li>'
       +'<li>Harga barang adalah merupakan harga yang berlaku di dalam daerah pengiriman terbatas di wilayah DKI Jakarta, Bogor, Tangerang dan Bekasi.</li>'
     +'</ol></div>'
     +'<div class="tnc-sec"><div class="tnc-sec-hd">II. Serah Terima Barang</div><ol>'
@@ -4351,6 +4377,8 @@ function clearAll(){
   currentSection='';
   sectionList=[''];
   customBlocks=[];
+  paymentTerms='5050';
+  document.getElementById('payment-terms').value='5050';
   renderBlocksList();
   ['client','contact','address','project','qt-date','client-code','ref-override'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('seq-num').value=1;
@@ -4399,6 +4427,7 @@ function currentQuoteRecord(){
     items:items,
     section_list:sectionList,
     custom_blocks:customBlocks,
+    payment_terms:paymentTerms,
     grand_total:calcTotals().grand,
     updated_at:new Date().toISOString()
   };
@@ -4415,19 +4444,36 @@ function saveQuoteToHistory(){
   var record=currentQuoteRecord();
   if(!record.ref){alert('Enter a quote number first.');return;}
   setStatus('Saving…');
-  fetch(SUPABASE_URL+'/rest/v1/quotes',{
-    method:'POST',
-    headers:supabaseHeaders({'Prefer':'resolution=merge-duplicates,return=minimal'}),
-    body:JSON.stringify(record)
-  }).then(function(res){
-    if(res.ok){
-      setStatus('Saved ✓ ('+record.ref+')');
-      setTimeout(function(){setStatus('');},3000);
-      return;
-    }
-    return res.json().catch(function(){return null;}).then(function(errBody){
-      throw new Error(errBody&&errBody.message?errBody.message:('HTTP '+res.status));
+  function postRecord(rec){
+    return fetch(SUPABASE_URL+'/rest/v1/quotes',{
+      method:'POST',
+      headers:supabaseHeaders({'Prefer':'resolution=merge-duplicates,return=minimal'}),
+      body:JSON.stringify(rec)
+    }).then(function(res){
+      if(res.ok)return null;
+      return res.json().catch(function(){return null;}).then(function(errBody){
+        var err=new Error(errBody&&errBody.message?errBody.message:('HTTP '+res.status));
+        err.body=errBody;
+        throw err;
+      });
     });
+  }
+  postRecord(record).then(function(){
+    setStatus('Saved ✓ ('+record.ref+')');
+    setTimeout(function(){setStatus('');},3000);
+  }).catch(function(e){
+    // Older Supabase tables made before "payment_terms" existed don't have
+    // that column yet — retry once without it rather than failing the
+    // whole save over one optional field.
+    var msg=(e&&e.message)||'';
+    if(msg.indexOf('payment_terms')!==-1){
+      var stripped={};
+      for(var k in record)if(k!=='payment_terms')stripped[k]=record[k];
+      return postRecord(stripped).then(function(){
+        setStatus('Saved ✓ ('+record.ref+') — tanpa cara pembayaran (tambahkan kolom payment_terms di Supabase untuk menyimpannya juga)');
+      });
+    }
+    throw e;
   }).catch(function(e){
     console.error('Save to history failed',e);
     // A server error (bad schema, RLS, etc.) is a different problem from no
@@ -4511,6 +4557,8 @@ function loadQuoteFromHistory(ref){
     items=r.items||[];
     sectionList=(r.section_list&&r.section_list.length)?r.section_list:[''];
     customBlocks=r.custom_blocks||[];
+    paymentTerms=r.payment_terms||'5050';
+    document.getElementById('payment-terms').value=paymentTerms;
     currentSection='';
     updateRef();
     refreshSectionSelect();
