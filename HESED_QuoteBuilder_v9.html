@@ -711,11 +711,15 @@ td:nth-child(4),th:nth-child(4){text-align:center}
     </div>
     <div class="grid-full">
       <div class="field">
-        <label>Cara pembayaran (muncul di Syarat &amp; Ketentuan)</label>
+        <label>Cara pembayaran (muncul di Syarat &amp; Ketentuan, poin I.2)</label>
         <select id="payment-terms" onchange="onPaymentTermsChange(this.value)">
           <option value="5050">50% uang muka, 50% sisanya sebelum pengiriman (default)</option>
           <option value="40-60x6">40% uang muka, 60% dicicil 6x selama 6 bulan</option>
+          <option value="custom">Custom (tulis sendiri)</option>
         </select>
+        <textarea id="payment-terms-custom" style="display:none;margin-top:8px" rows="3"
+          placeholder="Tulis klausul cara pembayaran sendiri, mis. hasil negosiasi dengan client..."
+          oninput="onPaymentTermsCustomInput(this.value)"></textarea>
       </div>
     </div>
     <div class="client-actions" id="client-actions" style="display:none">
@@ -1878,15 +1882,47 @@ let customBlocks=[];
 // Ketentuan I. Saved with the quote (history/draft), since it's a real
 // term of the deal, not just a display preference.
 let paymentTerms='5050';
+let paymentTermsCustom='';
+var PAYMENT_TERMS_PRESETS={
+  '5050':'Cara pembayaran adalah 50% dari Harga Total sebagai uang muka dan 50% sisanya dari Harga Total sebelum pengiriman barang untuk diserahterimakan dari PT Hesed Kharis Indonesia kepada pembeli.',
+  '40-60x6':'Cara pembayaran adalah 40% sebagai uang muka dan 60% sisanya dicicil dalam 6 (enam) kali pembayaran selama 6 (enam) bulan, dimulai pada bulan berikutnya setelah pembayaran uang muka.'
+};
 function onPaymentTermsChange(v){
-  paymentTerms=(v==='40-60x6')?'40-60x6':'5050';
+  paymentTerms=PAYMENT_TERMS_PRESETS[v]?v:'custom';
+  var box=document.getElementById('payment-terms-custom');
+  if(paymentTerms==='custom'){
+    // Start from whatever preset text was showing — easier to tweak a few
+    // words for a negotiated deal than to write the whole clause from
+    // scratch.
+    if(!paymentTermsCustom)paymentTermsCustom=PAYMENT_TERMS_PRESETS['5050'];
+    box.value=paymentTermsCustom;
+    box.style.display='block';
+  } else {
+    box.style.display='none';
+  }
+  scheduleDraftSave();
+}
+function onPaymentTermsCustomInput(v){
+  paymentTermsCustom=v;
   scheduleDraftSave();
 }
 function paymentTermsClause(){
-  if(paymentTerms==='40-60x6'){
-    return 'Cara pembayaran adalah 40% sebagai uang muka dan 60% sisanya dicicil dalam 6 (enam) kali pembayaran selama 6 (enam) bulan, dimulai pada bulan berikutnya setelah pembayaran uang muka.';
+  if(paymentTerms==='custom')return paymentTermsCustom||PAYMENT_TERMS_PRESETS['5050'];
+  return PAYMENT_TERMS_PRESETS[paymentTerms]||PAYMENT_TERMS_PRESETS['5050'];
+}
+// Shared by restoreDraft/loadQuoteFromHistory/clearAll — keeps the select,
+// the custom textarea's value, and its visibility all in sync at once.
+function applyPaymentTermsState(terms,customText){
+  paymentTerms=(PAYMENT_TERMS_PRESETS[terms]||terms==='custom')?terms:'5050';
+  paymentTermsCustom=customText||'';
+  document.getElementById('payment-terms').value=paymentTerms;
+  var box=document.getElementById('payment-terms-custom');
+  if(paymentTerms==='custom'){
+    box.value=paymentTermsCustom;
+    box.style.display='block';
+  } else {
+    box.style.display='none';
   }
-  return 'Cara pembayaran adalah 50% dari Harga Total sebagai uang muka dan 50% sisanya dari Harga Total sebelum pengiriman barang untuk diserahterimakan dari PT Hesed Kharis Indonesia kepada pembeli.';
 }
 // Which item rows have their advanced FX/PPN/size controls expanded —
 // transient UI state only, not saved with the quote. Keyed by item index.
@@ -1925,6 +1961,7 @@ function saveDraftNow(){
       section_list:sectionList,
       custom_blocks:customBlocks,
       payment_terms:paymentTerms,
+      payment_terms_custom:paymentTermsCustom,
       saved_at:new Date().toISOString()
     };
     localStorage.setItem(DRAFT_KEY,JSON.stringify(draft));
@@ -1959,8 +1996,7 @@ function restoreDraft(){
   items=d.items||[];
   sectionList=(d.section_list&&d.section_list.length)?d.section_list:[''];
   customBlocks=d.custom_blocks||[];
-  paymentTerms=d.payment_terms||'5050';
-  document.getElementById('payment-terms').value=paymentTerms;
+  applyPaymentTermsState(d.payment_terms||'5050',d.payment_terms_custom||'');
   updateRef();
   refreshSectionSelect();
   renderAll();
@@ -4377,8 +4413,7 @@ function clearAll(){
   currentSection='';
   sectionList=[''];
   customBlocks=[];
-  paymentTerms='5050';
-  document.getElementById('payment-terms').value='5050';
+  applyPaymentTermsState('5050','');
   renderBlocksList();
   ['client','contact','address','project','qt-date','client-code','ref-override'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('seq-num').value=1;
@@ -4428,6 +4463,7 @@ function currentQuoteRecord(){
     section_list:sectionList,
     custom_blocks:customBlocks,
     payment_terms:paymentTerms,
+    payment_terms_custom:paymentTermsCustom,
     grand_total:calcTotals().grand,
     updated_at:new Date().toISOString()
   };
@@ -4462,15 +4498,15 @@ function saveQuoteToHistory(){
     setStatus('Saved ✓ ('+record.ref+')');
     setTimeout(function(){setStatus('');},3000);
   }).catch(function(e){
-    // Older Supabase tables made before "payment_terms" existed don't have
-    // that column yet — retry once without it rather than failing the
-    // whole save over one optional field.
+    // Older Supabase tables made before "payment_terms"/"payment_terms_custom"
+    // existed don't have those columns yet — retry once without them rather
+    // than failing the whole save over two optional fields.
     var msg=(e&&e.message)||'';
     if(msg.indexOf('payment_terms')!==-1){
       var stripped={};
-      for(var k in record)if(k!=='payment_terms')stripped[k]=record[k];
+      for(var k in record)if(k!=='payment_terms'&&k!=='payment_terms_custom')stripped[k]=record[k];
       return postRecord(stripped).then(function(){
-        setStatus('Saved ✓ ('+record.ref+') — tanpa cara pembayaran (tambahkan kolom payment_terms di Supabase untuk menyimpannya juga)');
+        setStatus('Saved ✓ ('+record.ref+') — tanpa cara pembayaran (tambahkan kolom payment_terms & payment_terms_custom di Supabase untuk menyimpannya juga)');
       });
     }
     throw e;
@@ -4557,8 +4593,7 @@ function loadQuoteFromHistory(ref){
     items=r.items||[];
     sectionList=(r.section_list&&r.section_list.length)?r.section_list:[''];
     customBlocks=r.custom_blocks||[];
-    paymentTerms=r.payment_terms||'5050';
-    document.getElementById('payment-terms').value=paymentTerms;
+    applyPaymentTermsState(r.payment_terms||'5050',r.payment_terms_custom||'');
     currentSection='';
     updateRef();
     refreshSectionSelect();
