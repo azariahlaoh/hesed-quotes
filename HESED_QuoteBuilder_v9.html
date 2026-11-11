@@ -30,7 +30,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:10
 .top-bar h1{font-size:17px;font-weight:700;letter-spacing:-.01em}
 .top-bar p{font-size:11.5px;color:#9a9a9e;margin-top:3px}
 .card{background:#fff;border-radius:var(--radius-lg);padding:22px;margin-bottom:16px;border:1px solid var(--border);box-shadow:var(--shadow-sm)}
-.card h2{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#aaa;margin-bottom:14px}
+.card h2{font-size:16px;font-weight:700;letter-spacing:-.01em;color:var(--ink);margin-bottom:16px}
 .collapsible-hd{cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none}
 .collapsible-hd:hover{color:#888}
 .collapsible-hd span:last-child{font-size:12px;color:#ccc;transition:transform .15s}
@@ -117,6 +117,8 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .block-row-info{flex:1;min-width:0}
 .block-row-title{font-size:12.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .section-rename-inp{width:100%;font-size:12.5px;font-weight:700;color:var(--ink);border:1px solid transparent;border-radius:5px;padding:3px 6px;background:transparent}
+.move-page-sel{display:inline-block;margin-top:5px;font-size:10.5px;font-weight:600;color:#555;border:1px solid #e2e2e2;border-radius:20px;padding:4px 20px 4px 10px;background:#f7f7f8;max-width:100%;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%23999'/></svg>");background-repeat:no-repeat;background-position:right 8px center}
+.move-page-sel:active,.move-page-sel:focus{outline:none;border-color:#1a1a1a;background-color:#fff}
 .section-rename-inp:hover{border-color:var(--border)}
 .section-rename-inp:focus{outline:none;border-color:#1a1a1a;background:#fff}
 .block-row-meta{font-size:10.5px;color:var(--muted)}
@@ -144,6 +146,9 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .tot-box{background:var(--ink);color:#fff;border-radius:var(--radius-lg);padding:20px 22px;margin-bottom:16px;box-shadow:var(--shadow-md)}
 .tot-row{display:flex;justify-content:space-between;font-size:13px;color:#aaa;padding:3px 0}
 .tot-grand{display:flex;justify-content:space-between;font-size:18px;font-weight:700;color:#fff;border-top:1px solid #333;margin-top:10px;padding-top:12px}
+.tot-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#ccc;padding:3px 0}
+.tot-ppn-lbl{display:inline-flex;align-items:center;gap:6px;cursor:pointer;color:#ccc}
+.tot-ppn-lbl input{width:14px;height:14px;cursor:pointer;accent-color:#fff}
 .actions{display:flex;gap:10px;flex-wrap:wrap}
 .empty-state{text-align:center;padding:32px;color:#bbb;font-size:13px}
 .tabs{display:flex;gap:2px;border-bottom:2px solid var(--border);margin-bottom:20px;overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -157,7 +162,8 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .price-disc{font-size:13px;color:#c0392b;font-weight:700;display:block}
 .price-disc-total{font-size:13px;color:#c0392b;font-weight:700;display:block}
 .price-saved{font-size:10px;color:#2d7a3a;background:#e8f4ea;border-radius:3px;padding:1px 5px;display:inline-block;margin-top:2px}
-.qnum-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.qnum-row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+#qnum-body{background:#f8f8fa;border-radius:12px;padding:12px;margin-top:10px;align-items:flex-end}
 .qnum-preview{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:14px;font-weight:700;letter-spacing:.02em;color:var(--ink);white-space:nowrap;min-width:220px}
 .qnum-preview .qn-label{font-size:10px;color:#aaa;font-weight:400;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:3px}
 .qnum-seq{display:flex;align-items:center;gap:6px}
@@ -411,13 +417,14 @@ td:nth-child(4),th:nth-child(4){text-align:center}
   #quote-details-card .grid-full{order:2}
   #client-actions{order:3}
   #qd-datecontact{order:4;margin-top:14px!important}
-  #qnum-row{order:5;margin-top:14px;background:#f8f8fa;border-radius:12px;padding:12px;gap:8px 10px;flex-direction:row!important;flex-wrap:wrap;align-items:stretch}
-  #qnum-row>div{flex:1 1 45%!important;min-width:130px!important;width:auto!important}
+  #qnum-row{order:5;margin-top:14px}
   #qnum-row .qn-label{font-size:9px}
-  #qnum-row .qnum-preview{font-size:11px;padding:8px 10px;background:#fff}
-  #qnum-row .field label,#qnum-row>div>label{font-size:9px}
-  #qnum-row .field input{font-size:12.5px;padding:8px 10px;min-height:36px;background:#fff}
-  #qnum-row .seq-btn,#qnum-row .seq-inp{width:30px;height:30px;min-height:0;font-size:12px}
+  #qnum-row .qnum-preview{font-size:11px;padding:8px 10px;background:#f8f8fa;border-radius:10px}
+  #qnum-body{order:5;gap:8px 10px;flex-wrap:wrap;align-items:stretch}
+  #qnum-body>div{flex:1 1 45%!important;min-width:130px!important;width:auto!important}
+  #qnum-body .field label,#qnum-body>div>label{font-size:9px}
+  #qnum-body .field input{font-size:12.5px;padding:8px 10px;min-height:36px;background:#fff}
+  #qnum-body .seq-btn,#qnum-body .seq-inp{width:30px;height:30px;min-height:0;font-size:12px}
   #client-name-field input{font-size:16px;font-weight:600}
 
   /* ── Stock card: a slim status strip instead of a full block ── */
@@ -512,6 +519,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .kiosk-sm-note{font-size:11.5px;color:#8a8a8f;background:#f5f5f7;border-radius:10px;padding:10px 12px;margin-bottom:14px}
 .kiosk-price-box{background:linear-gradient(180deg,#fbfbfc 0%,#f3f4f6 100%);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:7px;margin-bottom:16px;box-shadow:inset 0 1px 2px rgba(0,0,0,.03)}
 .kiosk-price-row{display:flex;justify-content:space-between;font-size:12px;color:#6b6b70}
+.kiosk-price-note{font-size:10px;color:#aaa;margin-top:6px;font-style:italic}
 .kiosk-price-sep{height:1px;background:#e9e9eb;margin:2px 0}
 .kiosk-price-total{font-size:13.5px;font-weight:700;color:#1a1a1a}
 .kiosk-add-btn{background:linear-gradient(135deg,#29292d 0%,#0f0f11 100%);color:#fff;font-size:14.5px;font-weight:700;border-radius:12px;padding:15px;text-align:center;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.25)}
@@ -609,6 +617,13 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .draft-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#fff8e6;border:1px solid #f0dca0;color:#7a5c00;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:12.5px}
 .draft-banner-actions{display:flex;gap:8px;flex-shrink:0}
 .undo-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:10000;background:var(--ink);color:#fff;padding:12px 16px;border-radius:10px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow-md);font-size:13px;max-width:90vw}
+.success-toast{position:fixed;left:50%;top:24px;transform:translateX(-50%);z-index:10001;background:#1f9254;color:#fff;padding:11px 18px;border-radius:10px;display:flex;align-items:center;gap:9px;box-shadow:var(--shadow-md);font-size:13px;font-weight:600;max-width:90vw;animation:toastIn .2s ease}
+.pairing-banner{margin-top:12px;padding:10px 12px;background:#fff8e8;border:1px solid #f3e3b8;border-radius:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;animation:toastIn .15s ease}
+.pairing-lbl{font-size:12px;color:#8a6d1f;font-weight:600;flex-shrink:0}
+.pairing-chip{background:#fff;border:1px solid #e8d8a0;color:#6b5312;font-size:11.5px;font-weight:600;padding:6px 11px;border-radius:20px;cursor:pointer}
+.pairing-chip:hover{background:#fdf3d9}
+.pairing-dismiss{margin-left:auto;background:none;border:none;color:#b3a06a;font-size:16px;cursor:pointer;padding:0 4px;line-height:1}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,-8px)}to{opacity:1;transform:translate(-50%,0)}}
 .undo-toast-btn{background:none;border:1px solid rgba(255,255,255,.4);color:#fff;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
 .undo-toast-btn:hover{background:rgba(255,255,255,.15)}
 
@@ -661,12 +676,20 @@ td:nth-child(4),th:nth-child(4){text-align:center}
   <div class="card" id="quote-details-card">
     <h2>Quote details</h2>
 
-    <!-- Quote number assembler -->
+    <!-- Quote number assembler — the auto-generated number is always
+         visible; client code/sequence/override/kurs are set-once-per-quote
+         admin details tucked behind a toggle so they don't eat screen
+         space (especially on mobile) every time. -->
     <div class="qnum-row" id="qnum-row">
       <div class="qnum-preview">
         <span class="qn-label">Quote number (auto)</span>
         <span id="ref-preview">&mdash;</span>
       </div>
+      <button type="button" class="opts-toggle-btn" id="qnum-toggle-btn" onclick="toggleOptsPanel('qnum-body','qnum-toggle-btn')">
+        Nomor &amp; kurs <span class="chev">&#9662;</span>
+      </button>
+    </div>
+    <div class="item-opts-body" id="qnum-body">
       <div class="field" style="width:160px;flex-shrink:0">
         <label>Client code</label>
         <input id="client-code" type="text" placeholder="e.g. KABARUT" oninput="updateRef()" style="text-transform:uppercase">
@@ -854,11 +877,13 @@ td:nth-child(4),th:nth-child(4){text-align:center}
         <div class="field"><label>Qty</label><input id="qty" type="number" value="1" min="1"></div>
         <button class="btn btn-dark" onclick="addCatalogItem()" id="add-btn" disabled style="opacity:.45">+ Add</button>
       </div>
-      <!-- Item options: exchange rate, PPN, discount -->
+      <!-- Item options: exchange rate, markup, discount. PPN is global now
+           (one checkbox on the Preview tab, applied once to the subtotal)
+           — no per-item PPN control here. -->
       <div class="item-opts" id="add-opts" style="display:none">
-        <span id="opt-sm-note" class="ppn-included-note" style="display:none">Harga Studiomaster sudah final (IDR, termasuk PPN) — FX &amp; PPN tidak berlaku</span>
+        <span id="opt-sm-note" class="ppn-included-note" style="display:none">Harga Studiomaster di katalog sudah termasuk PPN — otomatis dikeluarkan dulu di sini supaya PPN cuma dihitung sekali di Harga Total</span>
         <button type="button" class="opts-toggle-btn" id="add-opts-toggle-btn" onclick="toggleOptsPanel('add-opts-body','add-opts-toggle-btn')">
-          Pengaturan lanjutan (kurs, PPN, diskon) <span class="chev">&#9662;</span>
+          Pengaturan lanjutan (kurs, diskon) <span class="chev">&#9662;</span>
         </button>
         <div class="item-opts-body" id="add-opts-body">
         <span id="opt-fx-ppn-wrap">
@@ -873,10 +898,6 @@ td:nth-child(4),th:nth-child(4){text-align:center}
           </select>
           <span class="hint" id="opt-rate-hint" style="margin-top:0">&times; kurs 20700</span>
         </div>
-        <div class="item-opts-sep"></div>
-        <label class="item-opt-toggle">
-          <input type="checkbox" id="opt-ppn-on" checked> PPN 11%
-        </label>
         <div class="item-opts-sep"></div>
         <label class="item-opt-toggle">
           <input type="checkbox" id="opt-twmarkup-on" checked> Markup TW Audio &times;1.8
@@ -894,6 +915,10 @@ td:nth-child(4),th:nth-child(4){text-align:center}
       </div>
       <input type="hidden" id="selected-prod-code" value="">
       </div>
+      <!-- "Smart pairing" — suggestions mined from past saved quotes, shown
+           right after adding a product so it's effortless to add its usual
+           companion item(s) too. -->
+      <div id="pairing-banner" class="pairing-banner" style="display:none"></div>
     </div>
 
     <div class="sub-pane" id="sub-custom">
@@ -919,13 +944,9 @@ td:nth-child(4),th:nth-child(4){text-align:center}
         <input type="checkbox" id="c-opt-fx-on" style="display:none">
         <input type="hidden" id="c-opt-currency" value="IDR">
         <button type="button" class="opts-toggle-btn" id="c-opts-toggle-btn" onclick="toggleOptsPanel('c-opts-body','c-opts-toggle-btn')">
-          Pengaturan lanjutan (PPN, diskon) <span class="chev">&#9662;</span>
+          Pengaturan lanjutan (diskon) <span class="chev">&#9662;</span>
         </button>
         <div class="item-opts-body" id="c-opts-body">
-        <label class="item-opt-toggle">
-          <input type="checkbox" id="c-opt-ppn-on"> PPN 11%
-        </label>
-        <div class="item-opts-sep"></div>
         <label class="item-opt-toggle">
           <input type="checkbox" id="c-opt-disc-on" onchange="toggleCOptDisc()"> Diskon
         </label>
@@ -1051,6 +1072,14 @@ td:nth-child(4),th:nth-child(4){text-align:center}
   </div>
 
   <div class="tot-box">
+    <div class="tot-row"><span>Subtotal</span><span id="tot-subtotal">IDR 0</span></div>
+    <div class="tot-row">
+      <label class="tot-ppn-lbl">
+        <input type="checkbox" id="tot-show-ppn" checked onchange="setDocShowPpn(this.checked)">
+        PPN 11% (dari total, bukan per produk)
+      </label>
+      <span id="tot-ppn-amt">IDR 0</span>
+    </div>
     <div class="tot-grand"><span>Harga Total</span><span id="grand">IDR 0</span></div>
   </div>
 
@@ -1118,6 +1147,11 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 <div class="undo-toast" id="undo-toast" style="display:none">
   <span id="undo-toast-msg"></span>
   <button type="button" class="undo-toast-btn" onclick="undoLastRemove()">Urungkan (Ctrl+Z)</button>
+</div>
+<!-- SUCCESS TOAST -->
+<div class="success-toast" id="success-toast" style="display:none">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="success-toast-msg"></span>
 </div>
 
 <div class="crop-modal" id="crop-modal" style="display:none">
@@ -1962,6 +1996,7 @@ function saveDraftNow(){
       custom_blocks:customBlocks,
       payment_terms:paymentTerms,
       payment_terms_custom:paymentTermsCustom,
+      show_ppn:docShowPpn,
       saved_at:new Date().toISOString()
     };
     localStorage.setItem(DRAFT_KEY,JSON.stringify(draft));
@@ -1997,6 +2032,7 @@ function restoreDraft(){
   sectionList=(d.section_list&&d.section_list.length)?d.section_list:[''];
   customBlocks=d.custom_blocks||[];
   applyPaymentTermsState(d.payment_terms||'5050',d.payment_terms_custom||'');
+  setDocShowPpn(d.show_ppn!==false);
   updateRef();
   refreshSectionSelect();
   renderAll();
@@ -2426,7 +2462,8 @@ function buildRtfString(){
   var project =document.getElementById('project').value||'';
   var dateVal =document.getElementById('qt-date').value;
   var date    =dateVal?dateVal:idDate();
-  var grand   =calcTotals().grand;
+  var tots    =calcTotals();
+  var grand   =tots.grand;
   var sectionGroups=groupBySection(items);
 
   // Column boundaries in twips (1440 twips = 1 inch): Produk, Deskripsi, QTY, Harga, Harga QTY
@@ -2487,7 +2524,13 @@ function buildRtfString(){
     });
     out+='\\pard\\par\n';
     if(gi===sectionGroups.length-1){
-      out+='\\qr\\b\\fs26 Harga Total: '+fmt(grand)+'\\b0\\fs22\\par\n';
+      if(docShowPpn){
+        out+='\\qr Harga Total: '+fmt(tots.subtotal)+'\\par\n';
+        out+='\\qr PPN 11%: '+fmt(tots.ppn)+'\\par\n';
+        out+='\\qr\\b\\fs26 Harga Total dan PPN: '+fmt(grand)+'\\b0\\fs22\\par\n';
+      } else {
+        out+='\\qr\\b\\fs26 Harga Total: '+fmt(grand)+'\\b0\\fs22\\par\n';
+      }
     } else {
       out+='\\qr\\b '+escapeRtf('Subtotal'+(g.name?' \u2014 '+g.name:''))+': '+fmt(subtotal)+'\\b0\\par\n';
     }
@@ -2604,7 +2647,14 @@ async function exportToExcel(){
       addRow([]);
     });
 
-    addRow(['','','','','','Harga Total',calcTotals().grand],{bold:true,moneyCols:[7]});
+    var tots=calcTotals();
+    if(docShowPpn){
+      addRow(['','','','','','Harga Total',tots.subtotal],{moneyCols:[7]});
+      addRow(['','','','','','PPN 11%',tots.ppn],{moneyCols:[7]});
+      addRow(['','','','','','Harga Total dan PPN',tots.grand],{bold:true,moneyCols:[7]});
+    } else {
+      addRow(['','','','','','Harga Total',tots.grand],{bold:true,moneyCols:[7]});
+    }
 
     var buf=await wb.xlsx.writeBuffer();
     var blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
@@ -2863,15 +2913,13 @@ function kioskRenderSheet(p,isSM){
     +'</div>';
   if(!isSM){
     var fxOn=document.getElementById('opt-fx-on').checked;
-    var ppnOn=document.getElementById('opt-ppn-on').checked;
     var twOn=document.getElementById('opt-twmarkup-on').checked;
     body+='<div class="kiosk-chip-row">'
       +'<div class="kiosk-toggle-chip'+(fxOn?' active':'')+'" onclick="kioskToggleOpt(\'fx\')">'+(fxOn?check:'')+'FX &times; kurs '+globalFxRate.toLocaleString('id-ID')+'</div>'
-      +'<div class="kiosk-toggle-chip'+(ppnOn?' active':'')+'" onclick="kioskToggleOpt(\'ppn\')">'+(ppnOn?check:'')+'PPN 11%</div>'
       +'<div class="kiosk-toggle-chip'+(twOn?' active':'')+'" onclick="kioskToggleOpt(\'twmarkup\')">'+(twOn?check:'')+'Markup &times;1.8</div>'
     +'</div>';
   } else {
-    body+='<div class="kiosk-sm-note">Harga Studiomaster sudah final (IDR, termasuk PPN) — FX &amp; PPN tidak berlaku</div>';
+    body+='<div class="kiosk-sm-note">Harga Studiomaster di katalog sudah termasuk PPN — otomatis dikeluarkan dulu (PPN dihitung sekali di total akhir)</div>';
   }
   body+='<div class="kiosk-price-box" id="kiosk-price-box"></div>'
     +'<div class="kiosk-add-btn" id="kiosk-add-btn" onclick="kioskAdd()">Tambah ke Pesanan</div>';
@@ -2880,7 +2928,7 @@ function kioskRenderSheet(p,isSM){
 }
 function kioskToggleOpt(which){
   if(!selectedProd)return;
-  var id=which==='fx'?'opt-fx-on':(which==='twmarkup'?'opt-twmarkup-on':'opt-ppn-on');
+  var id=which==='fx'?'opt-fx-on':'opt-twmarkup-on';
   var el=document.getElementById(id);
   el.checked=!el.checked;
   if(which==='fx')toggleOptFx();
@@ -2903,36 +2951,38 @@ function kioskUpdateBreakdown(p,isSM){
   if(!box)return;
   var qty=parseInt(document.getElementById('qty').value)||1;
   var fxOn=isSM?false:document.getElementById('opt-fx-on').checked;
-  var ppnOn=isSM?true:document.getElementById('opt-ppn-on').checked;
   var twOn=isSM?false:document.getElementById('opt-twmarkup-on').checked;
   var tmp={
     catalogPrice:isSM?null:p.price,
     idrDirect:isSM?p.idrDirect:null,
     fxOn:fxOn,
     fxRate:fxOn?globalFxRate:0,
-    ppnOn:ppnOn,
     twMarkupOn:twOn,
     includesPPN:!!isSM
   };
-  var unit=unitIdr(tmp);
+  var unit=unitIdr(tmp); // pre-tax — PPN (if any) is applied once on the quote total, not here
   var lineTotal=unit*qty;
   var rows='';
+  var running=p.price;
   if(isSM){
-    rows='<div class="kiosk-price-row"><span>Harga satuan (sudah termasuk PPN)</span><span>IDR '+p.idrDirect.toLocaleString('id-ID')+'</span></div>';
+    rows='<div class="kiosk-price-row"><span>Harga katalog (termasuk PPN)</span><span>IDR '+p.idrDirect.toLocaleString('id-ID')+'</span></div>'
+      +'<div class="kiosk-price-row"><span>PPN dikeluarkan (&divide;1.11)</span><span>IDR '+unit.toLocaleString('id-ID')+'</span></div>';
   } else {
     if(fxOn){
-      rows+='<div class="kiosk-price-row"><span>&euro;'+p.price.toLocaleString()+' &times; kurs '+globalFxRate.toLocaleString('id-ID')+'</span><span>IDR '+Math.round(p.price*globalFxRate).toLocaleString('id-ID')+'</span></div>';
+      running=Math.round(p.price*globalFxRate);
+      rows+='<div class="kiosk-price-row"><span>&euro;'+p.price.toLocaleString()+' &times; kurs '+globalFxRate.toLocaleString('id-ID')+'</span><span>IDR '+running.toLocaleString('id-ID')+'</span></div>';
     }
-    if(ppnOn){
-      var base=fxOn?p.price*globalFxRate:p.price;
-      rows+='<div class="kiosk-price-row"><span>PPN 11%</span><span>+IDR '+Math.round(base*0.11).toLocaleString('id-ID')+'</span></div>';
+    if(twOn){
+      running=Math.round(running*TW_MARKUP);
+      rows+='<div class="kiosk-price-row"><span>Markup TW Audio &times;'+TW_MARKUP+'</span><span>IDR '+running.toLocaleString('id-ID')+'</span></div>';
     }
   }
   rows+='<div class="kiosk-price-sep"></div>'
-    +'<div class="kiosk-price-row kiosk-price-total"><span>Harga satuan</span><span>IDR '+unit.toLocaleString('id-ID')+'</span></div>';
+    +'<div class="kiosk-price-row kiosk-price-total"><span>Harga satuan (sebelum PPN)</span><span>IDR '+unit.toLocaleString('id-ID')+'</span></div>';
   if(qty>1){
     rows+='<div class="kiosk-price-row kiosk-price-total"><span>Total ('+qty+'&times;)</span><span>IDR '+lineTotal.toLocaleString('id-ID')+'</span></div>';
   }
+  rows+='<div class="kiosk-price-note">PPN 11% (kalau aktif) dihitung sekali di Harga Total, bukan per produk</div>';
   box.innerHTML=rows;
   var addBtn=document.getElementById('kiosk-add-btn');
   if(addBtn)addBtn.textContent='Tambah ke Pesanan · IDR '+lineTotal.toLocaleString('id-ID');
@@ -2978,7 +3028,7 @@ function onBrowsePick(){
   var p=PRODUCTS.find(function(x){return x.code===code;});
   if(!p)return;
   var isSM=p.series&&p.series.indexOf('SM-')===0;
-  var hint=isSM?('IDR '+p.idrDirect.toLocaleString('id-ID')+' (incl. PPN 11%)'):(String.fromCharCode(8364)+p.price.toLocaleString()+' (EUR x rate x 1.11 incl. PPN)');
+  var hint=isSM?('IDR '+p.idrDirect.toLocaleString('id-ID')+' (katalog, termasuk PPN)'):(String.fromCharCode(8364)+p.price.toLocaleString()+' (EUR x kurs x 1.8 markup)');
   document.getElementById('browse-eur').textContent=hint;
   selectedProd=p;
   document.getElementById('selected-prod-code').value=p.code;
@@ -2991,7 +3041,7 @@ function onBrowsePick(){
   updateSmOptsVisibility(isSM);
 }
 
-// Studiomaster prices are already final IDR incl. PPN — hide the FX/PPN
+// Studiomaster prices are already final IDR incl. PPN — hide the FX/markup
 // controls entirely for those so there's nothing confusing to toggle.
 function updateSmOptsVisibility(isSM){
   var note=document.getElementById('opt-sm-note');
@@ -3209,9 +3259,11 @@ function fmt(n){return 'IDR'+Math.round(n).toLocaleString('id-ID');}
 // into an existing line in the current section, or pushes a new one.
 function addProductToItems(p,qty,opts){
   var isSM=p.series&&p.series.indexOf('SM-')===0;
-  opts=opts||{fxOn:false,fxRate:0,fxCurrency:'',ppnOn:false,itemDisc:0};
-  // Studiomaster prices are already final IDR (incl. PPN) — FX/PPN/markup never apply.
-  if(isSM){ opts.ppnOn=false; opts.fxOn=false; opts.fxRate=0; opts.fxCurrency=''; opts.twMarkupOn=false; }
+  opts=opts||{fxOn:false,fxRate:0,fxCurrency:'',itemDisc:0};
+  // Studiomaster prices are already final IDR (incl. PPN) — FX/markup never
+  // apply. PPN itself is now global (see calcTotals/docShowPpn) — its
+  // embedded PPN gets backed out in unitIdr() via includesPPN instead.
+  if(isSM){ opts.fxOn=false; opts.fxRate=0; opts.fxCurrency=''; opts.twMarkupOn=false; }
   // TW Audio markup defaults to on when not explicitly specified (e.g. Quick
   // Add, which has no checkbox of its own) — still a checkbox the user can
   // switch off per item, just automatically checked to start.
@@ -3233,7 +3285,7 @@ function addProductToItems(p,qty,opts){
     section:currentSection,
     includesPPN:!!isSM,
     fxOn:opts.fxOn, fxRate:opts.fxRate, fxCurrency:opts.fxCurrency,
-    ppnOn:opts.ppnOn, itemDisc:opts.itemDisc,
+    itemDisc:opts.itemDisc,
     twMarkupOn:!!opts.twMarkupOn,
     docImgSize:'lg', docDescSize:'md'
   });
@@ -3245,6 +3297,7 @@ function addCatalogItem(){
   var qty=parseInt(document.getElementById('qty').value)||1;
   var opts=getAddOpts('');
   addProductToItems(p,qty,opts);
+  ensurePairingData(function(){showPairingSuggestions(p.code);});
   // reset search mode safely
   var psEl=document.getElementById('prod-search');
   if(psEl)psEl.value='';
@@ -3351,13 +3404,13 @@ function resolveQuickAddAmbiguous(i,code){
 
 function commitQuickAdd(){
   var added=0, skipped=0;
-  // Same defaults as the regular catalog Add button (FX + PPN on) —
-  // addProductToItems already zeroes these back out for Studiomaster
+  // Same defaults as the regular catalog Add button (FX on) —
+  // addProductToItems already zeroes this back out for Studiomaster
   // products, so this is safe to pass unconditionally.
-  var defaultOpts={fxOn:true,fxRate:globalFxRate,fxCurrency:'EUR',ppnOn:true,itemDisc:0};
+  var defaultOpts={fxOn:true,fxRate:globalFxRate,fxCurrency:'EUR',itemDisc:0};
   quickAddParsed.forEach(function(r){
     if(r.status!=='matched'||!r.product){skipped++;return;}
-    addProductToItems(r.product,r.qty,{fxOn:defaultOpts.fxOn,fxRate:defaultOpts.fxRate,fxCurrency:defaultOpts.fxCurrency,ppnOn:defaultOpts.ppnOn,itemDisc:defaultOpts.itemDisc});
+    addProductToItems(r.product,r.qty,{fxOn:defaultOpts.fxOn,fxRate:defaultOpts.fxRate,fxCurrency:defaultOpts.fxCurrency,itemDisc:defaultOpts.itemDisc});
     added++;
   });
   document.getElementById('quick-add-text').value='';
@@ -3384,7 +3437,7 @@ function addCustomItem(){
     section:currentSection,
     includesPPN:false,
     fxOn:opts.fxOn,fxRate:opts.fxRate,fxCurrency:opts.fxCurrency,
-    ppnOn:opts.ppnOn,itemDisc:opts.itemDisc,
+    itemDisc:opts.itemDisc,
     twMarkupOn:false, // custom/IDR-direct items have no EUR catalog price to mark up
     docImgSize:'lg', docDescSize:'md'
   });
@@ -3402,16 +3455,18 @@ function addCustomItem(){
 var TW_MARKUP=1.8;
 
 // Compute unit price based on item's own options (fx, ppn, markup, disc)
+// Pre-tax unit price. PPN is no longer applied per item — it's computed
+// once on the whole quote's subtotal (see calcTotals) so rounding and the
+// 11% only ever happen a single time, not once per line. Studiomaster
+// catalog prices are quoted PPN-inclusive, so that embedded PPN is backed
+// out here (÷1.11) to get everyone onto the same pre-tax basis before the
+// one global PPN pass.
 function unitIdr(it){
   var p=it.catalogPrice!=null?it.catalogPrice:(it.idrDirect!=null?it.idrDirect:(it.eurPrice!=null?it.eurPrice:(it.idrPrice||0)));
   var result=p;
-  // Apply exchange rate if on
   if(it.fxOn && it.fxRate>0) result=result*it.fxRate;
-  // TW Audio markup, if on, before PPN and discount
   if(it.twMarkupOn) result=result*TW_MARKUP;
-  // Apply PPN if on — but never for items whose catalog price already includes PPN
-  // (e.g. Studiomaster — the pricelist is already PPN-inclusive and in IDR)
-  if(it.ppnOn && !it.includesPPN) result=result*1.11;
+  if(it.includesPPN) result=result/1.11;
   return Math.round(result);
 }
 
@@ -3459,14 +3514,12 @@ function toggleCOptDisc(){
 function getAddOpts(prefix){
   prefix=prefix||'';
   var fxOn=document.getElementById(prefix+'opt-fx-on').checked;
-  var ppnOn=document.getElementById(prefix+'opt-ppn-on').checked;
   var discOn=document.getElementById(prefix+'opt-disc-on').checked;
   var twEl=document.getElementById(prefix+'opt-twmarkup-on');
   return{
     fxOn:fxOn,
     fxRate:fxOn?globalFxRate:0, // one shared rate for every item — see onGlobalFxRateChange
     fxCurrency:fxOn?document.getElementById(prefix+'opt-currency').value:'',
-    ppnOn:ppnOn,
     itemDisc:discOn?parseFloat(document.getElementById(prefix+'opt-disc-pct').value)||0:0,
     twMarkupOn:twEl?twEl.checked:undefined // only the catalog panel has this checkbox
   };
@@ -3474,11 +3527,10 @@ function getAddOpts(prefix){
 
 function resetAddOpts(prefix){
   prefix=prefix||'';
-  // Catalog (TW Audio) adds default back to FX+PPN+markup checked — that's
+  // Catalog (TW Audio) adds default back to FX+markup checked — that's
   // the common case. Custom items default the other way (plain IDR).
   var isCatalog=(prefix==='');
   document.getElementById(prefix+'opt-fx-on').checked=isCatalog;
-  document.getElementById(prefix+'opt-ppn-on').checked=isCatalog;
   var twEl=document.getElementById(prefix+'opt-twmarkup-on');
   if(twEl)twEl.checked=isCatalog;
   document.getElementById(prefix+'opt-disc-on').checked=false;
@@ -3501,10 +3553,6 @@ function syncFx(i){
   if(fxEl&&curEl){
     updateItemFx(i,fxEl.checked,curEl.value);
   }
-}
-function updateItemPpn(i,on){
-  items[i].ppnOn=on;
-  renderAll();
 }
 function updateItemTwMarkup(i,on){
   items[i].twMarkupOn=on;
@@ -3545,6 +3593,15 @@ function hideUndoToast(){
   if(t)t.style.display='none';
 }
 
+function showSuccessToast(msg){
+  var t=document.getElementById('success-toast');
+  if(!t)return;
+  document.getElementById('success-toast-msg').textContent=msg;
+  t.style.display='flex';
+  clearTimeout(showSuccessToast._timer);
+  showSuccessToast._timer=setTimeout(function(){t.style.display='none';},3500);
+}
+
 // Ctrl+Z (outside text fields, so native undo still works while typing)
 // undoes the last removed product/content block.
 document.addEventListener('keydown',function(e){
@@ -3565,6 +3622,11 @@ function updateItemName(i,v){
   var name=v.trim()||items[i].code;
   items[i].code=name;
   items[i].displayName=name;
+  renderAll();
+}
+function moveItemToSection(i,val){
+  if(!items[i])return;
+  items[i].section=val;
   renderAll();
 }
 
@@ -3915,6 +3977,19 @@ function buildItemRowHtml(it,i){
     var nameCellHtml=it.custom
       ?'<input class="ioc-inp" style="width:100%;font-weight:600" type="text" value="'+escapeHtml(it.code)+'" onchange="updateItemName('+i+',this.value)" title="Edit nama barang">'
       :'<strong>'+escapeHtml(it.code)+'</strong>';
+    // A tap-friendly way to move a product to another page/section — native
+    // <select>, styled like a small pill button. Drag-and-drop (the header
+    // bar / row dropping) still works on desktop, but HTML5 drag doesn't
+    // fire on touchscreens at all, so phones need a real tap control.
+    var itSecKey=it.section||'';
+    var moveToPageHtml=sectionList.length>1
+      ?'<select class="move-page-sel" onchange="moveItemToSection('+i+',this.value)" title="Pindah ke halaman/bagian lain">'
+        +sectionList.map(function(s,idx){
+          var label='Hal '+(idx+1)+' — '+(s?escapeHtml(s):'Umum');
+          return '<option value="'+escapeHtml(s)+'"'+(itSecKey===s?' selected':'')+'>'+label+'</option>';
+        }).join('')
+      +'</select>'
+      :'';
     var descVal=escapeHtml(it.desc||'');
     var specsVal=escapeHtml(it.specs||'');
     var descEditHtml='<textarea class="desc-edit" placeholder="Deskripsi produk..." onchange="updateItemDesc('+i+',this.value)">'+descVal+'</textarea>';
@@ -3943,7 +4018,7 @@ function buildItemRowHtml(it,i){
     var catP=it.catalogPrice!=null?it.catalogPrice:u;
     var fxCur=it.fxOn&&it.fxCurrency?it.fxCurrency:'';
     var isTwMarkup=!!it.twMarkupOn;
-    var hasAnyCalc=it.fxOn||it.ppnOn||effPct>0||it.includesPPN||isTwMarkup;
+    var hasAnyCalc=it.fxOn||effPct>0||it.includesPPN||isTwMarkup;
     // Custom items can have their base price edited after adding — the
     // price was hand-typed in the first place, so there's no catalog
     // list to protect the way there is for catalog products.
@@ -3957,7 +4032,7 @@ function buildItemRowHtml(it,i){
       unitBreakdown+='<span class="pb-base" style="font-size:12px;color:#999">'
         +(fxCur?fxCur+' ':'')+catP.toLocaleString('id-ID')
         +'</span>';
-      unitBreakdown+='<br><span style="font-size:9px;color:#ccc">pilih FX / PPN / Disc</span>';
+      unitBreakdown+='<br><span style="font-size:9px;color:#ccc">pilih FX / Disc</span>';
     } else {
       // FX step
       var runningBase=catP;
@@ -3966,18 +4041,19 @@ function buildItemRowHtml(it,i){
         unitBreakdown+='<span class="pb-base">'+fxCur+' '+catP.toLocaleString('id-ID')+'</span>';
         unitBreakdown+='<br><span class="pb-base">×'+it.fxRate.toLocaleString('id-ID')+' = '+fmt(runningBase)+'</span>';
       } else {
-        unitBreakdown+='<span class="pb-base">'+fmt(catP)+'</span>';
+        unitBreakdown+='<span class="pb-base">'+fmt(catP)+(it.includesPPN?' (termasuk PPN)':'')+'</span>';
       }
-      // TW Audio markup step — always applied, before PPN/discount
+      // TW Audio markup step — before discount
       if(isTwMarkup){
         runningBase=Math.round(runningBase*TW_MARKUP);
         unitBreakdown+='<br><span class="pb-base">&times;'+TW_MARKUP+' (markup TW Audio) = '+fmt(runningBase)+'</span>';
       }
-      // PPN step
-      if(it.ppnOn && !it.includesPPN){
-        unitBreakdown+='<br><span class="pb-ppn">PPN 11%: +'+fmt(Math.round(runningBase*0.11))+'</span>';
-      } else if(it.includesPPN){
-        unitBreakdown+='<br><span class="ppn-included-note">Harga sudah termasuk PPN 11%</span>';
+      // Studiomaster catalog prices already bake PPN in — back it out so
+      // every item sits on the same pre-tax basis (PPN itself is applied
+      // once on the quote's subtotal, not here — see the totals box).
+      if(it.includesPPN){
+        runningBase=Math.round(runningBase/1.11);
+        unitBreakdown+='<br><span class="pb-base">&divide;1.11 (PPN dikeluarkan) = '+fmt(runningBase)+'</span>';
       }
       // Disc step
       if(effPct>0){
@@ -3998,11 +4074,11 @@ function buildItemRowHtml(it,i){
     }
     totalBreakdown+='</div>';
 
-    // FX, PPN, and document display sizing — always visible inline.
+    // FX, markup, and document display sizing — shown when a row's
+    // "Lainnya" panel is expanded. PPN has no per-row control anymore.
     var fxChecked=it.fxOn?'checked':'';
-    var ppnChecked=it.ppnOn?'checked':'';
     var fxCur=it.fxCurrency||'EUR';
-    var curId='ioc-c'+i, fxId='ioc-f'+i, ppnId='ioc-p'+i, twId='ioc-tw'+i;
+    var curId='ioc-c'+i, fxId='ioc-f'+i, twId='ioc-tw'+i;
     var imgSizeSelAdv=imgSrc?('<div class="ioc-row"><label class="doc-size-lbl-inline">Ukuran gambar</label>'
       +'<select class="ioc-sel" onchange="updateItemDocImgSize('+i+',this.value)">'
       +'<option value=""'+(!it.docImgSize?' selected':'')+'>Default</option>'
@@ -4019,7 +4095,7 @@ function buildItemRowHtml(it,i){
     var inlineControls='<div class="ioc">'
       +'<div class="ioc-row">'
         +(it.includesPPN
-          ? '<span class="ppn-included-note">Harga sudah final (IDR, termasuk PPN) — FX &amp; PPN tidak berlaku</span>'
+          ? '<span class="ppn-included-note">Harga katalog sudah final (IDR) — PPN-nya dikeluarkan otomatis, FX tidak berlaku</span>'
           : '<input type="checkbox" id="'+fxId+'" '+fxChecked+' onchange="syncFx('+i+')">'
             +'<label for="'+fxId+'">FX</label>'
             +'<select class="ioc-sel" id="'+curId+'" onchange="syncFx('+i+')">'
@@ -4029,9 +4105,6 @@ function buildItemRowHtml(it,i){
             +'</select>'
             +'<span class="hint" style="margin-top:0">&times; kurs '+globalFxRate.toLocaleString('id-ID')+'</span>')
       +'</div>'
-      +(it.includesPPN?'':'<div class="ioc-row">'
-        +'<input type="checkbox" id="'+ppnId+'" '+ppnChecked+' onchange="updateItemPpn('+i+',this.checked)"><label for="'+ppnId+'">PPN 11%</label>'
-      +'</div>')
       +(it.custom?'':'<div class="ioc-row">'
         +'<input type="checkbox" id="'+twId+'" '+(it.twMarkupOn?'checked':'')+' onchange="updateItemTwMarkup('+i+',this.checked)"><label for="'+twId+'">Markup TW Audio &times;1.8</label>'
       +'</div>')
@@ -4049,7 +4122,7 @@ function buildItemRowHtml(it,i){
     // products move between sections now (plus dropping straight onto a
     // section's header bar, including an empty one).
     var rowHtml='<tr draggable="true" data-idx="'+i+'" ondragstart="dragStart(event,'+i+')" ondragover="dragOverRow(event)" ondragleave="dragLeaveRow(event)" ondrop="dropRow(event,'+i+')" ondragend="dragEndRow()">'
-      +'<td data-label="Produk"><span class="drag-grip" title="Geser untuk memindahkan/mengurutkan ulang">&#10247;</span>'+nameCellHtml+'<div style="font-size:10px;color:#aaa;margin-top:2px">'+it.series+'</div>'+badge+stockBadgeHtml(it.code)+'</td>'
+      +'<td data-label="Produk"><span class="drag-grip" title="Geser untuk memindahkan/mengurutkan ulang">&#10247;</span>'+nameCellHtml+'<div style="font-size:10px;color:#aaa;margin-top:2px">'+it.series+'</div>'+badge+stockBadgeHtml(it.code)+moveToPageHtml+'</td>'
       +'<td data-label="Gambar" style="text-align:center;vertical-align:top">'+imgCellHtml+'</td>'
       +'<td data-label="Deskripsi" style="vertical-align:top">'+descEditHtml+'</td>'
       +'<td data-label="Spesifikasi" style="vertical-align:top">'+specsEditHtml+'</td>'
@@ -4066,21 +4139,31 @@ function buildItemRowHtml(it,i){
 }
 
 function calcTotals(){
-  // Grand total = sum of all final unit prices (PPN included, disc applied)
-  var grand=items.reduce(function(s,it){
+  // Subtotal = sum of pre-tax, post-discount line totals. PPN (if on) is
+  // applied once here, to the subtotal — not per item — so it's always
+  // exactly 11% of one number instead of a sum of per-line roundings.
+  var subtotal=items.reduce(function(s,it){
     return s+unitFinal(it)*it.qty;
   },0);
-  return{grand:Math.round(grand)};
+  subtotal=Math.round(subtotal);
+  var ppn=docShowPpn?Math.round(subtotal*0.11):0;
+  return{subtotal:subtotal,ppn:ppn,grand:subtotal+ppn};
 }
 
 
 function updateTots(){
   var t=calcTotals();
   document.getElementById('grand').textContent=fmt(t.grand);
+  var subEl=document.getElementById('tot-subtotal');
+  if(subEl)subEl.textContent=fmt(t.subtotal);
+  var ppnEl=document.getElementById('tot-ppn-amt');
+  if(ppnEl)ppnEl.textContent=(docShowPpn?'':'− ')+fmt(t.ppn);
   var badge=document.getElementById('disc-preview');
   if(badge){
-    var rawGrand=items.reduce(function(s,it){return s+unitIdr(it)*it.qty;},0);
-    var saved=Math.round(rawGrand)-t.grand;
+    // Compare pre-discount vs post-discount, both pre-tax — PPN is
+    // proportional either way, so it doesn't belong in a "saved" number.
+    var rawSubtotal=items.reduce(function(s,it){return s+unitIdr(it)*it.qty;},0);
+    var saved=Math.round(rawSubtotal)-t.subtotal;
     badge.textContent=saved>0?('hemat '+fmt(saved)):'';
   }
 }
@@ -4100,12 +4183,17 @@ var BANNER_URI = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwM
 // row) — the table column then sizes itself to the LARGEST size actually
 // used on that page, so nothing gets clipped.
 let docImageSize='lg';
-// Per-quote only — whether the totals box breaks PPN out as its own line,
-// or just shows one final "Harga Total" figure.
+// The single global PPN switch — whether 11% is added to the quote's
+// subtotal at all (see calcTotals), and whether that's broken out as its
+// own line in the totals box/doc/RTF/Excel, or just folded into one
+// "Harga Total" figure. Replaces the old per-item PPN checkboxes.
 let docShowPpn=true;
 function setDocShowPpn(v){
   docShowPpn=!!v;
-  buildDoc();
+  var a=document.getElementById('doc-show-ppn'); if(a)a.checked=docShowPpn;
+  var b=document.getElementById('tot-show-ppn'); if(b)b.checked=docShowPpn;
+  updateTots();
+  if(document.getElementById('pane-preview').classList.contains('active'))buildDoc();
 }
 const DOC_IMG_SIZES={
   sm:{colPct:6, imgW:34, imgH:26, label:'Kecil'},
@@ -4229,20 +4317,16 @@ function buildDoc(){
   var sectionGroups=groupBySection(items);
 
   // ── Totals (grand total — shown on last section's page) ────────
-  // grand already includes PPN for SM items (idrDirect); for TW Audio items
-  // PPN 11% is included via unitFinal(). We show a clean 3-line breakdown:
-  // the sum is already fully tax-inclusive, so we back-calculate the base.
-  var grandWithPPN = grand;
-  var baseBeforePPN = Math.round(grandWithPPN / 1.11);
-  var ppnAmount = grandWithPPN - baseBeforePPN;
+  // PPN (if on) is applied once to the subtotal in calcTotals() — no
+  // back-calculation needed, the three numbers are already correct as-is.
   var totalsHtml='<div class="doc-totals-wrap">'
     +'<div class="doc-tot-inner">'
       +(docShowPpn
-        ? '<div class="doc-tot-row"><span class="lbl">Harga Total</span><span class="amt">'+fmt(baseBeforePPN)+'</span></div>'
-          +'<div class="doc-tot-row"><span class="lbl">PPN 11%</span><span class="amt">'+fmt(ppnAmount)+'</span></div>'
+        ? '<div class="doc-tot-row"><span class="lbl">Harga Total</span><span class="amt">'+fmt(tots.subtotal)+'</span></div>'
+          +'<div class="doc-tot-row"><span class="lbl">PPN 11%</span><span class="amt">'+fmt(tots.ppn)+'</span></div>'
           +'<div class="doc-tot-divider"></div>'
-          +'<div class="doc-tot-grand"><span class="lbl">Harga Total dan PPN</span><span class="amt">'+fmt(grandWithPPN)+'</span></div>'
-        : '<div class="doc-tot-grand"><span class="lbl">Harga Total</span><span class="amt">'+fmt(grandWithPPN)+'</span></div>')
+          +'<div class="doc-tot-grand"><span class="lbl">Harga Total dan PPN</span><span class="amt">'+fmt(grand)+'</span></div>'
+        : '<div class="doc-tot-grand"><span class="lbl">Harga Total</span><span class="amt">'+fmt(grand)+'</span></div>')
     +'</div>'
   +'</div>';
 
@@ -4414,6 +4498,7 @@ function clearAll(){
   sectionList=[''];
   customBlocks=[];
   applyPaymentTermsState('5050','');
+  setDocShowPpn(true);
   renderBlocksList();
   ['client','contact','address','project','qt-date','client-code','ref-override'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('seq-num').value=1;
@@ -4448,6 +4533,79 @@ function supabaseHeaders(extra){
   return h;
 }
 
+/* ---- Smart pairing suggestions ("sering dipasangkan dengan...") -------
+   Mined from your own saved quote history: which product codes have
+   actually appeared together in the same past quote, and how often.
+   No manual setup — it just gets more useful as more quotes are saved. */
+let pairingData=null; // {code: {pairedCode: count}}
+let pairingDataLoading=false;
+
+function ensurePairingData(cb){
+  if(pairingData){cb&&cb();return;}
+  if(!historyConfigured())return;
+  if(pairingDataLoading)return;
+  pairingDataLoading=true;
+  fetch(SUPABASE_URL+'/rest/v1/quotes?select=items&order=updated_at.desc&limit=200',{
+    headers:supabaseHeaders()
+  }).then(function(res){
+    return res.ok?res.json():[];
+  }).then(function(rows){
+    var map={};
+    rows.forEach(function(r){
+      var codes=(r.items||[]).filter(function(it){return it&&!it.custom&&it.code;}).map(function(it){return it.code;});
+      var uniq=codes.filter(function(c,i){return codes.indexOf(c)===i;});
+      uniq.forEach(function(a){
+        uniq.forEach(function(b){
+          if(a===b)return;
+          if(!map[a])map[a]={};
+          map[a][b]=(map[a][b]||0)+1;
+        });
+      });
+    });
+    pairingData=map;
+    pairingDataLoading=false;
+    if(cb)cb();
+  }).catch(function(){ pairingDataLoading=false; });
+}
+
+// Top paired codes for one product, excluding anything already in this quote.
+function suggestPairingsFor(code){
+  if(!pairingData||!pairingData[code])return [];
+  var already={};
+  items.forEach(function(it){already[it.code]=true;});
+  var pairs=Object.keys(pairingData[code]).filter(function(c){return !already[c];});
+  pairs.sort(function(a,b){return pairingData[code][b]-pairingData[code][a];});
+  return pairs.slice(0,3).map(function(c){return{code:c,count:pairingData[code][c]};});
+}
+
+function showPairingSuggestions(code){
+  var banner=document.getElementById('pairing-banner');
+  if(!banner)return;
+  var suggestions=suggestPairingsFor(code);
+  if(!suggestions.length){banner.style.display='none';return;}
+  banner.innerHTML='<span class="pairing-lbl">&#128161; Sering dipasangkan dengan '+escapeHtml(code)+':</span>'
+    +suggestions.map(function(s){
+      var p=PRODUCTS.find(function(x){return x.code===s.code;});
+      var label=p?(p.code+' — '+p.desc.substring(0,36)):s.code;
+      var safeCode=s.code.replace(/'/g,"\\'"), safeAnchor=code.replace(/'/g,"\\'");
+      return '<button type="button" class="pairing-chip" onclick="addPairingSuggestion(\''+safeCode+'\',\''+safeAnchor+'\')">+ '+escapeHtml(label)+'</button>';
+    }).join('')
+    +'<button type="button" class="pairing-dismiss" onclick="document.getElementById(\'pairing-banner\').style.display=\'none\'">&times;</button>';
+  banner.style.display='flex';
+}
+
+function addPairingSuggestion(code,anchorCode){
+  var p=PRODUCTS.find(function(x){return x.code===code;});
+  if(!p)return;
+  var isSM=p.series&&p.series.indexOf('SM-')===0;
+  addProductToItems(p,1,{fxOn:!isSM,fxRate:!isSM?globalFxRate:0,fxCurrency:!isSM?'EUR':'',itemDisc:0});
+  renderAll();
+  // Keep showing suggestions for the ORIGINAL product that was just added
+  // (the one the banner was opened for), not the suggestion just clicked —
+  // otherwise one click derails into suggestions for a different anchor.
+  showPairingSuggestions(anchorCode||code);
+}
+
 function currentQuoteRecord(){
   return {
     ref:getRef()||'',
@@ -4464,6 +4622,7 @@ function currentQuoteRecord(){
     custom_blocks:customBlocks,
     payment_terms:paymentTerms,
     payment_terms_custom:paymentTermsCustom,
+    show_ppn:docShowPpn,
     grand_total:calcTotals().grand,
     updated_at:new Date().toISOString()
   };
@@ -4494,19 +4653,22 @@ function saveQuoteToHistory(){
       });
     });
   }
+  // Fields added after the original "quotes" table was created — an older
+  // table may not have these columns yet, in which case we retry once
+  // without all of them rather than failing the whole save.
+  var OPTIONAL_FIELDS=['payment_terms','payment_terms_custom','show_ppn'];
   postRecord(record).then(function(){
-    setStatus('Saved ✓ ('+record.ref+')');
-    setTimeout(function(){setStatus('');},3000);
+    setStatus('');
+    showSuccessToast('Tersimpan ke History ✓ ('+record.ref+')');
   }).catch(function(e){
-    // Older Supabase tables made before "payment_terms"/"payment_terms_custom"
-    // existed don't have those columns yet — retry once without them rather
-    // than failing the whole save over two optional fields.
     var msg=(e&&e.message)||'';
-    if(msg.indexOf('payment_terms')!==-1){
+    var missingOptional=OPTIONAL_FIELDS.some(function(f){return msg.indexOf(f)!==-1;});
+    if(missingOptional){
       var stripped={};
-      for(var k in record)if(k!=='payment_terms'&&k!=='payment_terms_custom')stripped[k]=record[k];
+      for(var k in record)if(OPTIONAL_FIELDS.indexOf(k)===-1)stripped[k]=record[k];
       return postRecord(stripped).then(function(){
-        setStatus('Saved ✓ ('+record.ref+') — tanpa cara pembayaran (tambahkan kolom payment_terms & payment_terms_custom di Supabase untuk menyimpannya juga)');
+        setStatus('');
+        showSuccessToast('Tersimpan ke History ✓ ('+record.ref+') — beberapa setting tidak ikut, tambahkan kolom '+OPTIONAL_FIELDS.join(', ')+' di Supabase');
       });
     }
     throw e;
@@ -4594,6 +4756,7 @@ function loadQuoteFromHistory(ref){
     sectionList=(r.section_list&&r.section_list.length)?r.section_list:[''];
     customBlocks=r.custom_blocks||[];
     applyPaymentTermsState(r.payment_terms||'5050',r.payment_terms_custom||'');
+    setDocShowPpn(r.show_ppn!==false);
     currentSection='';
     updateRef();
     refreshSectionSelect();
