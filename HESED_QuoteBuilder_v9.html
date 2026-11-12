@@ -2643,7 +2643,7 @@ function buildRtfString(){
     out+=row(['Produk','Deskripsi','QTY','Harga','Harga QTY'],true);
     var subtotal=0;
     g.items.forEach(function(it){
-      var uShow=unitShow(it);
+      var uShow=unitFinal(it);
       var totalShow=uShow*it.qty;
       subtotal+=totalShow;
       var name=escapeRtf(it.displayName||it.code,'\\line ')+(it.series?('\\line '+escapeRtf(it.series,'\\line ')):'');
@@ -2759,7 +2759,7 @@ async function exportToExcel(){
       addRow(['Produk','Deskripsi','Spesifikasi','Qty','Harga Satuan','Disc %','Total'],{bold:true});
       var subtotal=0;
       g.items.forEach(function(it){
-        var uShow=unitShow(it);
+        var uShow=unitFinal(it);
         var totalShow=uShow*it.qty;
         subtotal+=totalShow;
         addRow([
@@ -4274,22 +4274,13 @@ function buildItemRowHtml(it,i){
     return rowHtml;
 }
 
-// PPN 11% is always charged. docShowPpn only decides whether the client
-// sees it as its own line (lines are pre-tax, total = subtotal + PPN) or
-// folded into the prices (each line shown PPN-inclusive, so the lines add
-// up to the same total without a separate PPN row).
-function unitShow(it){
-  var u=unitFinal(it);
-  return docShowPpn?u:Math.round(u*1.11);
-}
+// PPN 11% is always charged, once, on the subtotal — never per product.
+// docShowPpn only decides whether the totals block lists PPN as its own
+// line or shows a single "Harga Total" (which still includes PPN).
 function calcTotals(){
   var subtotal=Math.round(items.reduce(function(s,it){return s+unitFinal(it)*it.qty;},0));
-  if(docShowPpn){
-    var ppn=Math.round(subtotal*0.11);
-    return{subtotal:subtotal,ppn:ppn,grand:subtotal+ppn};
-  }
-  var grand=items.reduce(function(s,it){return s+unitShow(it)*it.qty;},0);
-  return{subtotal:subtotal,ppn:grand-subtotal,grand:grand};
+  var ppn=Math.round(subtotal*0.11);
+  return{subtotal:subtotal,ppn:ppn,grand:subtotal+ppn};
 }
 
 
@@ -4430,7 +4421,7 @@ function buildDoc(){
 
   function buildRowsHtml(arr,gambarPct){
     return arr.map(function(it){
-      var uShow=unitShow(it);
+      var uShow=unitFinal(it);
       var totalShow=uShow*it.qty;
       var spec=it.specs?'<div class="spec-block">'+escapeHtml(it.specs)+'</div>':'';
       var descHtml=escapeHtml(it.desc||'').replace(/\n/g,'<br>');
@@ -4551,7 +4542,7 @@ function buildDoc(){
     var titleSuffix = g.name ? (' &mdash; '+escapeHtml(g.name)) : '';
     var gambarPct = DOC_IMG_SIZES[sectionMaxImgSizeKey(g.items)].colPct;
     var rowsHtml = buildRowsHtml(g.items,gambarPct);
-    var subtotal = g.items.reduce(function(s,it){return s+unitShow(it)*it.qty;},0);
+    var subtotal = g.items.reduce(function(s,it){return s+unitFinal(it)*it.qty;},0);
     var subtotalLineHtml = '<div class="doc-tot-sub"><span class="lbl">Subtotal'+(g.name?' &mdash; '+escapeHtml(g.name):'')+'</span><span class="amt">'+fmt(Math.round(subtotal))+'</span></div>';
     // Last page shows its own subtotal AND the grand total together, so
     // the recap reads top-to-bottom instead of only showing the final sum.
