@@ -124,7 +124,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .block-row-meta{font-size:10.5px;color:var(--muted)}
 .block-row-actions{display:flex;gap:6px;flex-shrink:0}
 .section-hdr-row td{background:#1a1a1a !important;color:#fff !important;font-weight:700;padding:7px 10px !important;font-size:10px !important;text-transform:uppercase;letter-spacing:.05em;border-bottom:none !important}
-.section-hdr-row td.section-hdr-td{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.section-hdr-inner{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;width:100%}
 .section-hdr-row.drag-over td{outline:2px dashed #fff;outline-offset:-4px}
 .section-empty-row.drag-over td{outline:2px dashed #999;outline-offset:-4px}
 .section-hdr-label{display:inline-flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:0}
@@ -4095,10 +4095,10 @@ function buildSectionHeaderRow(secKey){
     +'ondragover="event.preventDefault();this.classList.add(\'drag-over\')" '
     +'ondragleave="this.classList.remove(\'drag-over\')" '
     +'ondrop="dropOnSectionHeader(event,'+secIdx+')">'
-    +'<td colspan="9" class="section-hdr-td"><span class="section-hdr-label">'+labelHtml
+    +'<td colspan="9" class="section-hdr-td"><div class="section-hdr-inner"><span class="section-hdr-label">'+labelHtml
       +'<span class="section-hdr-hint" title="Seret gambar (mis. EASE Focus .bmp) ke sini untuk lampirkan ke bagian ini">&#128247;</span></span>'
       +delBtn
-    +'</td>'
+    +'</div></td>'
   +'</tr>';
 }
 
