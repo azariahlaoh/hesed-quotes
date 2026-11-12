@@ -3172,7 +3172,14 @@ function onBrowsePick(){
 
 // Studiomaster prices are already final IDR incl. PPN — hide the FX/markup
 // controls entirely for those so there's nothing confusing to toggle.
+// Power amplifiers (and the system racks built around them) are sold at
+// their list price — the 1.8x TW Audio markup only applies to the rest.
+function isNoMarkupSeries(series){
+  return series==='Amplifiers'||series==='Amp-Install-Dynacord'||series==='Amp-Install-Powersoft';
+}
 function updateSmOptsVisibility(isSM){
+  var tw=document.getElementById('opt-twmarkup-on');
+  if(tw)tw.checked=!(selectedProd&&isNoMarkupSeries(selectedProd.series));
   var note=document.getElementById('opt-sm-note');
   var wrap=document.getElementById('opt-fx-ppn-wrap');
   if(!note||!wrap)return;
@@ -3396,7 +3403,7 @@ function addProductToItems(p,qty,opts){
   // TW Audio markup defaults to on when not explicitly specified (e.g. Quick
   // Add, which has no checkbox of its own) — still a checkbox the user can
   // switch off per item, just automatically checked to start.
-  else if(opts.twMarkupOn===undefined){ opts.twMarkupOn=true; }
+  else if(opts.twMarkupOn===undefined){ opts.twMarkupOn=!isNoMarkupSeries(p.series); }
   // Adding the same product again always creates a new line, even in the
   // same section — some quotes genuinely need the same product listed
   // separately (different pricing/notes per line), so nothing is merged.
