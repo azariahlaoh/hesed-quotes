@@ -1076,7 +1076,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
     <div class="tot-row">
       <label class="tot-ppn-lbl">
         <input type="checkbox" id="tot-show-ppn" checked onchange="setDocShowPpn(this.checked)">
-        PPN 11% (dari total, bukan per produk)
+        PPN 11% (selalu dihitung dari total) — centang = tampilkan ke client
       </label>
       <span id="tot-ppn-amt">IDR 0</span>
     </div>
@@ -1114,7 +1114,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
     </select>
     <label class="doc-custom-lbl" for="doc-show-ppn" style="margin-left:10px">
       <input type="checkbox" id="doc-show-ppn" checked onchange="setDocShowPpn(this.checked)" style="vertical-align:middle;margin-right:4px">
-      Tampilkan rincian PPN
+      Tampilkan PPN 11% ke client
     </label>
     <span class="print-tip">Print dialog &rarr; destination "Save as PDF" &middot; set margins to Minimum or None</span>
   </div>
@@ -2639,11 +2639,11 @@ function buildRtfString(){
 
   sectionGroups.forEach(function(g,gi){
     out+='\\page\n';
-    out+='\\pard\\b\\fs32 '+escapeRtf('Daftar Barang'+(g.name?' \u2014 '+g.name:''))+'\\b0\\fs22\\par\\par\n';
+    if(g.name)out+='\\pard\\b\\fs32 '+escapeRtf(g.name)+'\\b0\\fs22\\par\\par\n';
     out+=row(['Produk','Deskripsi','QTY','Harga','Harga QTY'],true);
     var subtotal=0;
     g.items.forEach(function(it){
-      var uShow=unitFinal(it);
+      var uShow=unitShow(it);
       var totalShow=uShow*it.qty;
       subtotal+=totalShow;
       var name=escapeRtf(it.displayName||it.code,'\\line ')+(it.series?('\\line '+escapeRtf(it.series,'\\line ')):'');
@@ -2755,11 +2755,11 @@ async function exportToExcel(){
     addRow([]);
 
     sectionGroups.forEach(function(g){
-      if(g.name)addRow(['Daftar Barang — '+g.name],{bold:true});
+      if(g.name)addRow([g.name],{bold:true});
       addRow(['Produk','Deskripsi','Spesifikasi','Qty','Harga Satuan','Disc %','Total'],{bold:true});
       var subtotal=0;
       g.items.forEach(function(it){
-        var uShow=unitFinal(it);
+        var uShow=unitShow(it);
         var totalShow=uShow*it.qty;
         subtotal+=totalShow;
         addRow([
@@ -4274,16 +4274,22 @@ function buildItemRowHtml(it,i){
     return rowHtml;
 }
 
+// PPN 11% is always charged. docShowPpn only decides whether the client
+// sees it as its own line (lines are pre-tax, total = subtotal + PPN) or
+// folded into the prices (each line shown PPN-inclusive, so the lines add
+// up to the same total without a separate PPN row).
+function unitShow(it){
+  var u=unitFinal(it);
+  return docShowPpn?u:Math.round(u*1.11);
+}
 function calcTotals(){
-  // Subtotal = sum of pre-tax, post-discount line totals. PPN (if on) is
-  // applied once here, to the subtotal — not per item — so it's always
-  // exactly 11% of one number instead of a sum of per-line roundings.
-  var subtotal=items.reduce(function(s,it){
-    return s+unitFinal(it)*it.qty;
-  },0);
-  subtotal=Math.round(subtotal);
-  var ppn=docShowPpn?Math.round(subtotal*0.11):0;
-  return{subtotal:subtotal,ppn:ppn,grand:subtotal+ppn};
+  var subtotal=Math.round(items.reduce(function(s,it){return s+unitFinal(it)*it.qty;},0));
+  if(docShowPpn){
+    var ppn=Math.round(subtotal*0.11);
+    return{subtotal:subtotal,ppn:ppn,grand:subtotal+ppn};
+  }
+  var grand=items.reduce(function(s,it){return s+unitShow(it)*it.qty;},0);
+  return{subtotal:subtotal,ppn:grand-subtotal,grand:grand};
 }
 
 
@@ -4293,7 +4299,7 @@ function updateTots(){
   var subEl=document.getElementById('tot-subtotal');
   if(subEl)subEl.textContent=fmt(t.subtotal);
   var ppnEl=document.getElementById('tot-ppn-amt');
-  if(ppnEl)ppnEl.textContent=(docShowPpn?'':'− ')+fmt(t.ppn);
+  if(ppnEl)ppnEl.textContent=fmt(t.ppn);
   var badge=document.getElementById('disc-preview');
   if(badge){
     // Compare pre-discount vs post-discount, both pre-tax — PPN is
@@ -4423,7 +4429,7 @@ function buildDoc(){
 
   function buildRowsHtml(arr,gambarPct){
     return arr.map(function(it){
-      var uShow=unitFinal(it);
+      var uShow=unitShow(it);
       var totalShow=uShow*it.qty;
       var spec=it.specs?'<div class="spec-block">'+escapeHtml(it.specs)+'</div>':'';
       var descHtml=escapeHtml(it.desc||'').replace(/\n/g,'<br>');
@@ -4544,7 +4550,7 @@ function buildDoc(){
     var titleSuffix = g.name ? (' &mdash; '+escapeHtml(g.name)) : '';
     var gambarPct = DOC_IMG_SIZES[sectionMaxImgSizeKey(g.items)].colPct;
     var rowsHtml = buildRowsHtml(g.items,gambarPct);
-    var subtotal = g.items.reduce(function(s,it){return s+unitFinal(it)*it.qty;},0);
+    var subtotal = g.items.reduce(function(s,it){return s+unitShow(it)*it.qty;},0);
     var subtotalLineHtml = '<div class="doc-tot-sub"><span class="lbl">Subtotal'+(g.name?' &mdash; '+escapeHtml(g.name):'')+'</span><span class="amt">'+fmt(Math.round(subtotal))+'</span></div>';
     // Last page shows its own subtotal AND the grand total together, so
     // the recap reads top-to-bottom instead of only showing the final sum.
@@ -4559,7 +4565,7 @@ function buildDoc(){
           +'</div>'
           +metaHtml)
         : '')
-      +'<div class="db-hd"><div class="db-title-lg">Daftar Barang'+titleSuffix+'</div></div>'
+      +(g.name?'<div class="db-hd"><div class="db-title-lg">'+escapeHtml(g.name)+'</div></div>':'')
       +'<table class="doc doc-table-pg"><thead><tr>'
         +'<th style="width:14%">Produk</th>'
         +'<th style="width:'+gambarPct+'%;text-align:center">Gambar</th>'
