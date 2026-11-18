@@ -2669,7 +2669,7 @@ function buildRtfString(){
       if(docLinePpn){
         var rnd=linePpnRounding();
         if(rnd!==0)out+='\\qr Pembulatan: '+fmt(rnd)+'\\par\n';
-        out+='\\qr\\b\\fs26 Harga Total (sudah termasuk PPN 11%): '+fmt(grand)+'\\b0\\fs22\\par\n';
+        out+='\\qr\\b\\fs26 Harga Total: '+fmt(grand)+'\\b0\\fs22\\par\n';
       } else if(docShowPpn){
         out+='\\qr Harga Total: '+fmt(tots.subtotal)+'\\par\n';
         out+='\\qr PPN 11%: '+fmt(tots.ppn)+'\\par\n';
@@ -2797,7 +2797,7 @@ async function exportToExcel(){
     if(docLinePpn){
       var rndX=linePpnRounding();
       if(rndX!==0)addRow(['','','','','','Pembulatan',rndX],{moneyCols:[7]});
-      addRow(['','','','','','Harga Total (sudah termasuk PPN 11%)',tots.grand],{bold:true,moneyCols:[7]});
+      addRow(['','','','','','Harga Total',tots.grand],{bold:true,moneyCols:[7]});
     } else if(docShowPpn){
       addRow(['','','','','','Harga Total',tots.subtotal],{moneyCols:[7]});
       addRow(['','','','','','PPN 11%',tots.ppn],{moneyCols:[7]});
@@ -4503,7 +4503,7 @@ function buildDoc(){
     +'<div class="doc-tot-inner">'
       +(docLinePpn
         ? (linePpnRounding()!==0?'<div class="doc-tot-row"><span class="lbl">Pembulatan</span><span class="amt">'+fmt(linePpnRounding())+'</span></div>':'')
-          +'<div class="doc-tot-grand"><span class="lbl">Harga Total (sudah termasuk PPN 11%)</span><span class="amt">'+fmt(grand)+'</span></div>'
+          +'<div class="doc-tot-grand"><span class="lbl">Harga Total</span><span class="amt">'+fmt(grand)+'</span></div>'
         : docShowPpn
         ? '<div class="doc-tot-row"><span class="lbl">Harga Total</span><span class="amt">'+fmt(tots.subtotal)+'</span></div>'
           +'<div class="doc-tot-row"><span class="lbl">PPN 11%</span><span class="amt">'+fmt(tots.ppn)+'</span></div>'
