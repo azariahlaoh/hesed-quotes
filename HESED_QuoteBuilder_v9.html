@@ -925,7 +925,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
       <div class="custom-grid">
         <div class="field"><label>Product code</label><input id="c-code" type="text" placeholder="e.g. QX2-3000"></div>
         <div class="field"><label>Description</label><input id="c-desc" type="text" placeholder="e.g. Studiomaster QX2-3000 Power Amplifier"></div>
-        <div class="field"><label>Unit price (catalog)</label><input id="c-price" type="number" placeholder="0" min="0" step="1000"></div>
+        <div class="field"><label>Unit price (catalog) <span style="font-weight:400;color:var(--muted,#888)">· boleh minus, mis. -5000000 untuk potongan</span></label><input id="c-price" type="number" placeholder="0" step="1000"></div>
         <div class="field"><label>Qty</label><input id="c-qty" type="number" value="1" min="1"></div>
         <button class="btn btn-dark" onclick="addCustomItem()">+ Add</button>
       </div>
@@ -2721,7 +2721,7 @@ function exportToWord(){
 // value/string, never an ExcelJS formula object. Headings are bold and
 // money columns use Rupiah number formatting (ExcelJS, not the SheetJS
 // build above — the free SheetJS build can't write cell styles at all).
-var RP_FMT='"Rp" #,##0';
+var RP_FMT='"Rp" #,##0;-"Rp" #,##0';
 async function exportToExcel(){
   if(!items.length){alert('Tambahkan produk dahulu di tab Builder.');return;}
   if(typeof ExcelJS==='undefined'){alert('Pustaka Excel belum termuat — cek koneksi internet lalu coba lagi.');return;}
@@ -3389,7 +3389,7 @@ document.addEventListener('click',function(e){
 });
 
 
-function fmt(n){return 'IDR'+Math.round(n).toLocaleString('id-ID');}
+function fmt(n){var r=Math.round(n);return (r<0?'-':'')+'IDR'+Math.abs(r).toLocaleString('id-ID');}
 
 // Shared by the single-pick Add flow and Quick Add (raw-text) — merges
 // into an existing line in the current section, or pushes a new one.
@@ -3563,7 +3563,7 @@ function addCustomItem(){
   var qty=parseInt(document.getElementById('c-qty').value)||1;
   if(!code){alert('Please enter a product code.');return;}
   if(!desc){alert('Please enter a description.');return;}
-  if(!price||price<=0){alert('Please enter a price.');return;}
+  if(!price||isNaN(price)){alert('Please enter a price (negative is allowed for a deduction).');return;}
   var opts=getAddOpts('c-');
   items.push({
     code:code,displayName:code,series:'Custom',desc:desc,
@@ -4030,7 +4030,7 @@ function updateItemDisc(i,v){
 
 function updateItemCatalogPrice(i,v){
   if(!items[i])return;
-  items[i].catalogPrice=Math.max(0,parseFloat(v)||0);
+  items[i].catalogPrice=parseFloat(v)||0; // negative allowed (custom deductions)
   renderAll();
 }
 
@@ -4159,7 +4159,7 @@ function buildItemRowHtml(it,i){
     // price was hand-typed in the first place, so there's no catalog
     // list to protect the way there is for catalog products.
     var priceEditHtml=it.custom
-      ?'<input class="ioc-inp" style="width:100%;margin-bottom:4px;text-align:right" type="number" value="'+catP+'" min="0" step="1000" onchange="updateItemCatalogPrice('+i+',this.value)" title="Edit harga dasar">'
+      ?'<input class="ioc-inp" style="width:100%;margin-bottom:4px;text-align:right" type="number" value="'+catP+'" step="1000" onchange="updateItemCatalogPrice('+i+',this.value)" title="Edit harga dasar">'
       :'';
     var unitBreakdown='<div class="pb">'+priceEditHtml;
 
