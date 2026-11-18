@@ -4591,7 +4591,7 @@ function buildDoc(){
     var titleSuffix = g.name ? (' &mdash; '+escapeHtml(g.name)) : '';
     var gambarPct = DOC_IMG_SIZES[sectionMaxImgSizeKey(g.items)].colPct;
     var rowsHtml = buildRowsHtml(g.items,gambarPct);
-    var subtotal = g.items.reduce(function(s,it){return s+unitFinal(it)*it.qty;},0);
+    var subtotal = g.items.reduce(function(s,it){return s+unitShowOf(it)*it.qty;},0); // follows the PPN-inclusive display mode
     var subtotalLineHtml = '<div class="doc-tot-sub"><span class="lbl">Subtotal'+(g.name?' &mdash; '+escapeHtml(g.name):'')+'</span><span class="amt">'+fmt(Math.round(subtotal))+'</span></div>';
     // Last page shows its own subtotal AND the grand total together, so
     // the recap reads top-to-bottom instead of only showing the final sum.
