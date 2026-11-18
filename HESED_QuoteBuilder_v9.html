@@ -1080,6 +1080,13 @@ td:nth-child(4),th:nth-child(4){text-align:center}
       </label>
       <span id="tot-ppn-amt">IDR 0</span>
     </div>
+    <div class="tot-row">
+      <label class="tot-ppn-lbl">
+        <input type="checkbox" id="tot-line-ppn" onchange="setDocLinePpn(this.checked)">
+        Harga per produk sudah termasuk PPN (supaya client mudah menghitung)
+      </label>
+      <span></span>
+    </div>
     <div class="tot-grand"><span>Harga Total</span><span id="grand">IDR 0</span></div>
   </div>
 
@@ -1115,6 +1122,10 @@ td:nth-child(4),th:nth-child(4){text-align:center}
     <label class="doc-custom-lbl" for="doc-show-ppn" style="margin-left:10px">
       <input type="checkbox" id="doc-show-ppn" checked onchange="setDocShowPpn(this.checked)" style="vertical-align:middle;margin-right:4px">
       Tampilkan PPN 11% ke client
+    </label>
+    <label class="doc-custom-lbl" for="doc-line-ppn" style="margin-left:10px">
+      <input type="checkbox" id="doc-line-ppn" onchange="setDocLinePpn(this.checked)" style="vertical-align:middle;margin-right:4px">
+      Harga per produk sudah + PPN
     </label>
     <span class="print-tip">Print dialog &rarr; destination "Save as PDF" &middot; set margins to Minimum or None</span>
   </div>
@@ -2126,6 +2137,7 @@ function saveDraftNow(){
       payment_terms:paymentTerms,
       payment_terms_custom:paymentTermsCustom,
       show_ppn:docShowPpn,
+      line_ppn:docLinePpn,
       saved_at:new Date().toISOString()
     };
     localStorage.setItem(DRAFT_KEY,JSON.stringify(draft));
@@ -2162,6 +2174,7 @@ function restoreDraft(){
   customBlocks=d.custom_blocks||[];
   applyPaymentTermsState(d.payment_terms||'5050',d.payment_terms_custom||'');
   setDocShowPpn(d.show_ppn!==false);
+  setDocLinePpn(d.line_ppn===true);
   updateRef();
   refreshSectionSelect();
   renderAll();
@@ -2643,7 +2656,7 @@ function buildRtfString(){
     out+=row(['Produk','Deskripsi','QTY','Harga','Harga QTY'],true);
     var subtotal=0;
     g.items.forEach(function(it){
-      var uShow=unitFinal(it);
+      var uShow=unitShowOf(it);
       var totalShow=uShow*it.qty;
       subtotal+=totalShow;
       var name=escapeRtf(it.displayName||it.code,'\\line ')+(it.series?('\\line '+escapeRtf(it.series,'\\line ')):'');
@@ -2653,7 +2666,11 @@ function buildRtfString(){
     });
     out+='\\pard\\par\n';
     if(gi===sectionGroups.length-1){
-      if(docShowPpn){
+      if(docLinePpn){
+        var rnd=linePpnRounding();
+        if(rnd!==0)out+='\\qr Pembulatan: '+fmt(rnd)+'\\par\n';
+        out+='\\qr\\b\\fs26 Harga Total (sudah termasuk PPN 11%): '+fmt(grand)+'\\b0\\fs22\\par\n';
+      } else if(docShowPpn){
         out+='\\qr Harga Total: '+fmt(tots.subtotal)+'\\par\n';
         out+='\\qr PPN 11%: '+fmt(tots.ppn)+'\\par\n';
         out+='\\qr\\b\\fs26 Harga Total dan PPN: '+fmt(grand)+'\\b0\\fs22\\par\n';
@@ -2759,7 +2776,7 @@ async function exportToExcel(){
       addRow(['Produk','Deskripsi','Spesifikasi','Qty','Harga Satuan','Disc %','Total'],{bold:true});
       var subtotal=0;
       g.items.forEach(function(it){
-        var uShow=unitFinal(it);
+        var uShow=unitShowOf(it);
         var totalShow=uShow*it.qty;
         subtotal+=totalShow;
         addRow([
@@ -2777,7 +2794,11 @@ async function exportToExcel(){
     });
 
     var tots=calcTotals();
-    if(docShowPpn){
+    if(docLinePpn){
+      var rndX=linePpnRounding();
+      if(rndX!==0)addRow(['','','','','','Pembulatan',rndX],{moneyCols:[7]});
+      addRow(['','','','','','Harga Total (sudah termasuk PPN 11%)',tots.grand],{bold:true,moneyCols:[7]});
+    } else if(docShowPpn){
       addRow(['','','','','','Harga Total',tots.subtotal],{moneyCols:[7]});
       addRow(['','','','','','PPN 11%',tots.ppn],{moneyCols:[7]});
       addRow(['','','','','','Harga Total dan PPN',tots.grand],{bold:true,moneyCols:[7]});
@@ -4329,6 +4350,31 @@ function setDocShowPpn(v){
   updateTots();
   if(document.getElementById('pane-preview').classList.contains('active'))buildDoc();
 }
+// Optional display mode: every product's unit price and line total are shown
+// WITH the 11% PPN already inside, so a client can multiply qty x price and
+// add the lines up to the grand total. This is display-only: calcTotals()
+// still computes PPN once on the subtotal, so the grand total never changes.
+// Per-line rounding can leave a few rupiah of difference vs. the grand
+// total; that is shown as an explicit "Pembulatan" line, never hidden.
+let docLinePpn=false;
+function setDocLinePpn(v){
+  docLinePpn=!!v;
+  var a=document.getElementById('doc-line-ppn'); if(a)a.checked=docLinePpn;
+  var b=document.getElementById('tot-line-ppn'); if(b)b.checked=docLinePpn;
+  ['doc-show-ppn','tot-show-ppn'].forEach(function(id){var e=document.getElementById(id); if(e)e.disabled=docLinePpn;});
+  updateTots();
+  scheduleDraftSave();
+  if(document.getElementById('pane-preview').classList.contains('active'))buildDoc();
+}
+function unitShowOf(it){
+  var u=unitFinal(it);
+  return docLinePpn?Math.round(u*1.11):u;
+}
+function linePpnRounding(){
+  if(!docLinePpn)return 0;
+  var sum=items.reduce(function(s,it){return s+unitShowOf(it)*it.qty;},0);
+  return calcTotals().grand-sum;
+}
 const DOC_IMG_SIZES={
   sm:{colPct:6, imgW:34, imgH:26, label:'Kecil'},
   md:{colPct:8, imgW:52, imgH:40, label:'Sedang'},
@@ -4421,7 +4467,7 @@ function buildDoc(){
 
   function buildRowsHtml(arr,gambarPct){
     return arr.map(function(it){
-      var uShow=unitFinal(it);
+      var uShow=unitShowOf(it);
       var totalShow=uShow*it.qty;
       var spec=it.specs?'<div class="spec-block">'+escapeHtml(it.specs)+'</div>':'';
       var descHtml=escapeHtml(it.desc||'').replace(/\n/g,'<br>');
@@ -4455,7 +4501,10 @@ function buildDoc(){
   // back-calculation needed, the three numbers are already correct as-is.
   var totalsHtml='<div class="doc-totals-wrap">'
     +'<div class="doc-tot-inner">'
-      +(docShowPpn
+      +(docLinePpn
+        ? (linePpnRounding()!==0?'<div class="doc-tot-row"><span class="lbl">Pembulatan</span><span class="amt">'+fmt(linePpnRounding())+'</span></div>':'')
+          +'<div class="doc-tot-grand"><span class="lbl">Harga Total (sudah termasuk PPN 11%)</span><span class="amt">'+fmt(grand)+'</span></div>'
+        : docShowPpn
         ? '<div class="doc-tot-row"><span class="lbl">Harga Total</span><span class="amt">'+fmt(tots.subtotal)+'</span></div>'
           +'<div class="doc-tot-row"><span class="lbl">PPN 11%</span><span class="amt">'+fmt(tots.ppn)+'</span></div>'
           +'<div class="doc-tot-divider"></div>'
@@ -4659,6 +4708,7 @@ function clearAll(){
   customBlocks=[];
   applyPaymentTermsState('5050','');
   setDocShowPpn(true);
+  setDocLinePpn(false);
   renderBlocksList();
   ['client','contact','address','project','qt-date','client-code','ref-override'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('seq-num').value=1;
@@ -4783,6 +4833,7 @@ function currentQuoteRecord(){
     payment_terms:paymentTerms,
     payment_terms_custom:paymentTermsCustom,
     show_ppn:docShowPpn,
+    line_ppn:docLinePpn,
     grand_total:calcTotals().grand,
     updated_at:new Date().toISOString()
   };
@@ -4816,7 +4867,7 @@ function saveQuoteToHistory(){
   // Fields added after the original "quotes" table was created — an older
   // table may not have these columns yet, in which case we retry once
   // without all of them rather than failing the whole save.
-  var OPTIONAL_FIELDS=['payment_terms','payment_terms_custom','show_ppn'];
+  var OPTIONAL_FIELDS=['payment_terms','payment_terms_custom','show_ppn','line_ppn'];
   postRecord(record).then(function(){
     setStatus('');
     showSuccessToast('Tersimpan ke History ✓ ('+record.ref+')');
@@ -4917,6 +4968,7 @@ function loadQuoteFromHistory(ref){
     customBlocks=r.custom_blocks||[];
     applyPaymentTermsState(r.payment_terms||'5050',r.payment_terms_custom||'');
     setDocShowPpn(r.show_ppn!==false);
+    setDocLinePpn(r.line_ppn===true);
     currentSection='';
     updateRef();
     refreshSectionSelect();
