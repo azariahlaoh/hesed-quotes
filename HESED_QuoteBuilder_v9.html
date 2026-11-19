@@ -4419,6 +4419,8 @@ function internalBreakdown(it){
 
 function buildInternalSheetHtml(){
   var client=document.getElementById('client').value||'';
+  var contact=document.getElementById('contact').value||'';
+  var address=document.getElementById('address').value||'';
   var ref=getRef()||'';
   var project=document.getElementById('project').value||'';
   var dateVal=document.getElementById('qt-date').value;
@@ -4439,83 +4441,80 @@ function buildInternalSheetHtml(){
 
   var listCat=0,finalCat=0,listCustom=0,finalCustom=0,flagged=0;
   var groups=groupBySection(items);
-  var no=0;
   var bodyRows=groups.map(function(g){
-    var secList=0,secFinal=0;
+    var head=g.name?'<tr class="sec"><td colspan="6">'+esc(g.name)+'</td></tr>':'';
     var rows=g.items.map(function(it){
-      no++;
       var u=unitIdr(it), f=unitFinal(it), pct=itemDiscPct(it);
       var lineList=u*it.qty, lineFinal=f*it.qty;
-      secList+=lineList; secFinal+=lineFinal;
       if(it.custom){listCustom+=lineList;finalCustom+=lineFinal;}else{listCat+=lineList;finalCat+=lineFinal;}
       var flag='';
       if(!it.custom&&nCat>=3&&modePct!=null&&Math.abs(pct-modePct)>0.05){
         flag='<div class="flag">⚠ beda dari diskon umum ('+modePct+'%)</div>';
         flagged++;
       }
-      var discCell=pct>0
-        ? '<b>'+(Math.round(pct*100)/100)+'%</b><div class="sm">−'+fmt(u-f)+' / unit</div>'
-        : '<span class="sm">—</span>';
+      var discCell=pct>0?(Math.round(pct*100)/100)+'%':'&ndash;';
       return '<tr>'
-        +'<td class="c">'+no+'</td>'
-        +'<td><b>'+esc(it.displayName||it.code)+'</b>'+(it.custom?' <span class="tag">custom</span>':'')+'<div class="sm">'+esc(it.series||'')+'</div></td>'
+        +'<td class="nm"><b>'+esc(it.displayName||it.code)+'</b><div class="ser">'+esc(it.series||'')+'</div>'
+          +'<div class="how">'+esc(internalBreakdown(it))+'</div></td>'
         +'<td class="c">'+it.qty+'</td>'
-        +'<td class="sm2">'+esc(internalBreakdown(it))+'</td>'
         +'<td class="r">'+fmt(u)+'</td>'
         +'<td class="c">'+discCell+flag+'</td>'
-        +'<td class="r"><b>'+fmt(f)+'</b></td>'
+        +'<td class="r">'+fmt(f)+'</td>'
         +'<td class="r"><b>'+fmt(lineFinal)+'</b></td>'
         +'</tr>';
     }).join('');
-    var head=g.name?'<tr class="sec"><td colspan="8">'+esc(g.name)+'</td></tr>':'';
-    var secDisc=secList-secFinal;
-    var foot='<tr class="subt"><td colspan="4" class="r">Subtotal'+(g.name?' — '+esc(g.name):'')+'</td><td class="r">'+fmt(secList)+'</td><td class="c">'+(secList>0&&secDisc!==0?(Math.round(secDisc/secList*1000)/10)+'%':'')+'</td><td></td><td class="r"><b>'+fmt(secFinal)+'</b></td></tr>';
-    return head+rows+foot;
+    return head+rows;
   }).join('');
 
   var listAll=listCat+listCustom;
   var discAll=listAll-(finalCat+finalCustom);
-  var pctAll=listAll>0?Math.round(discAll/listAll*1000)/10:0;
   var discCat=listCat-finalCat;
   var pctCat=listCat>0?Math.round(discCat/listCat*1000)/10:0;
 
-  var css='@page{size:A4 landscape;margin:10mm}*{box-sizing:border-box}body{font-family:Inter,Arial,sans-serif;color:#222;font-size:10.5px;margin:0}'
-   +'.ban{background:#b3261e;color:#fff;font-weight:700;letter-spacing:.06em;padding:6px 10px;font-size:11px;display:flex;justify-content:space-between}'
-   +'h1{font-size:17px;margin:10px 0 2px}.meta{color:#555;margin-bottom:8px}.meta b{color:#222}'
-   +'table{width:100%;border-collapse:collapse}th{background:#313131;color:#fff;text-align:left;padding:5px 6px;font-size:9.5px;letter-spacing:.03em}'
-   +'td{padding:5px 6px;border-bottom:1px solid #e3e3e3;vertical-align:top}.r{text-align:right;white-space:nowrap}.c{text-align:center}'
-   +'.sm{color:#777;font-size:9px;margin-top:1px}.sm2{color:#555;font-size:9.5px}.tag{background:#eee;border-radius:3px;padding:0 4px;font-size:8.5px;color:#555}'
-   +'.flag{color:#b3261e;font-size:8.8px;margin-top:2px;font-weight:600}'
-   +'tr.sec td{background:#f1ece1;font-weight:700;padding:6px}tr.subt td{background:#fafafa;border-top:1px solid #bbb}'
+  var css='@page{size:A4;margin:14mm 14mm 16mm;@bottom-left{content:"'+esc(ref)+' · internal";font:8px Inter,Arial,sans-serif;color:#aaa}@bottom-right{content:"halaman " counter(page) " dari " counter(pages);font:8px Inter,Arial,sans-serif;color:#aaa}}'
+   +'*{box-sizing:border-box;margin:0;padding:0}body{font-family:Inter,Arial,sans-serif;color:#111;font-size:11px}'
+   +'.co{font-size:9.5px;color:#222;padding-bottom:6px;border-bottom:1px solid #ddd}.co b{font-weight:700}'
+   +'.tag{display:inline-block;margin-top:8px;background:#b3261e;color:#fff;font-weight:700;font-size:8.5px;letter-spacing:.08em;padding:3px 8px;border-radius:2px}'
+   +'.ttl{border-top:2px solid #111;margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;align-items:baseline}'
+   +'.ttl h1{font-size:24px;font-weight:800;letter-spacing:-.01em}.ttl .no{font-size:24px;font-weight:800}'
+   +'.meta{display:grid;grid-template-columns:1fr 1fr;gap:10px 30px;margin:14px 0 14px}.meta .k{font-size:7.5px;letter-spacing:.1em;color:#999;text-transform:uppercase;margin-bottom:2px}.meta .v{font-size:10.5px}'
+   +'table{width:100%;border-collapse:collapse}'
+   +'th{font-size:8px;letter-spacing:.1em;color:#888;text-transform:uppercase;font-weight:600;text-align:left;padding:7px 6px;border-bottom:2px solid #111}'
+   +'td{padding:8px 6px;border-bottom:1px solid #e4e4e4;vertical-align:top}'
+   +'.r{text-align:right;white-space:nowrap}.c{text-align:center}th.r{text-align:right}th.c{text-align:center}'
+   +'.nm b{font-size:11px}.ser{font-size:7.5px;letter-spacing:.06em;color:#aaa;text-transform:uppercase;margin-top:1px}.how{font-size:8.5px;color:#777;margin-top:3px}'
+   +'.flag{color:#b3261e;font-size:8px;margin-top:3px;font-weight:600;line-height:1.25}'
+   +'tr.sec td{background:#f5f5f5;font-weight:700;font-size:10px;padding:6px}'
    +'tr{page-break-inside:avoid}'
-   +'.sum{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:16px;page-break-inside:avoid}'
-   +'.box{border:1px solid #ccc;border-radius:6px;padding:8px 10px}.box h3{margin:0 0 6px;font-size:11px}'
-   +'.kv{display:flex;justify-content:space-between;padding:2px 0}.kv.big{border-top:1px solid #333;margin-top:4px;padding-top:5px;font-size:13px;font-weight:700}'
-   +'.note{color:#b3261e;font-weight:600;margin-top:6px}';
+   +'.tot{margin:14px 0 0 auto;width:62%;page-break-inside:avoid}'
+   +'.tot .row{display:flex;justify-content:space-between;padding:4px 0;font-size:10.5px}'
+   +'.tot .sep{border-top:1px solid #ccc;margin:4px 0}'
+   +'.tot .grand{display:flex;justify-content:space-between;border-top:2px solid #111;margin-top:4px;padding-top:7px;font-size:13px;font-weight:800}'
+   +'.dnote{margin-top:12px;border:1px solid #e0b4b0;background:#fdf3f2;color:#b3261e;border-radius:4px;padding:6px 9px;font-size:9px;font-weight:600;page-break-inside:avoid}';
 
-  var summary='<div class="sum">'
-    +'<div class="box"><h3>Diskon</h3>'
-      +'<div class="kv"><span>Barang katalog: harga list</span><span>'+fmt(listCat)+'</span></div>'
-      +'<div class="kv"><span>Barang katalog: setelah diskon</span><span>'+fmt(finalCat)+'</span></div>'
-      +'<div class="kv"><b>Diskon barang katalog</b><b>'+fmt(discCat)+' ('+pctCat+'%)</b></div>'
-      +(listCustom||finalCustom?'<div class="kv"><span>Item custom / jasa</span><span>'+fmt(finalCustom)+'</span></div>':'')
-      +'<div class="kv"><span>Diskon seluruh quotation</span><span>'+fmt(discAll)+' ('+pctAll+'%)</span></div>'
-      +(flagged?'<div class="note">⚠ '+flagged+' barang diskonnya beda dari yang umum ('+modePct+'%). Cek tanda merah di tabel.</div>':'')
+  var totals='<div class="tot">'
+    +'<div class="row"><span>Harga list (barang katalog)</span><span>'+fmt(listCat)+'</span></div>'
+    +'<div class="row"><span>Diskon barang katalog ('+pctCat+'%)</span><span>−'+fmt(discCat)+'</span></div>'
+    +(listCustom||finalCustom?'<div class="row"><span>Item custom / jasa</span><span>'+fmt(finalCustom)+'</span></div>':'')
+    +'<div class="sep"></div>'
+    +'<div class="row"><span>Harga Total</span><span>'+fmt(tots.subtotal)+'</span></div>'
+    +'<div class="row"><span>PPN 11%</span><span>'+fmt(tots.ppn)+'</span></div>'
+    +'<div class="grand"><span>Harga + PPN</span><span>'+fmt(tots.grand)+'</span></div>'
     +'</div>'
-    +'<div class="box"><h3>Total</h3>'
-      +'<div class="kv"><span>Subtotal (sebelum PPN)</span><span>'+fmt(tots.subtotal)+'</span></div>'
-      +'<div class="kv"><span>PPN 11%</span><span>'+fmt(tots.ppn)+'</span></div>'
-      +'<div class="kv big"><span>Grand total</span><span>'+fmt(tots.grand)+'</span></div>'
-    +'</div></div>';
+    +(flagged?'<div class="dnote">⚠ '+flagged+' barang diskonnya beda dari yang umum ('+modePct+'%). Cek tanda merah di tabel.</div>':'');
 
   return '<!doctype html><html lang="id"><head><meta charset="utf-8"><title>INTERNAL '+esc(ref)+'</title><style>'+css+'</style></head><body>'
-    +'<div class="ban"><span>🔒 LEMBAR INTERNAL — JANGAN DIKIRIM KE KLIEN</span><span>PT HESED Kharis Indonesia</span></div>'
-    +'<h1>Rincian harga &amp; diskon</h1>'
-    +'<div class="meta"><b>'+esc(ref)+'</b> &middot; '+esc(date)+(client?' &middot; '+esc(client):'')+(project?' &middot; '+esc(project):'')
-      +' &middot; Kurs '+globalFxRate.toLocaleString('id-ID')+'</div>'
-    +'<table><thead><tr><th style="width:3%">#</th><th style="width:20%">Produk</th><th style="width:4%">Qty</th><th style="width:21%">Harga list &amp; rincian</th>'
-    +'<th style="width:12%;text-align:right">Sebelum diskon</th><th style="width:11%;text-align:center">Diskon</th><th style="width:13%;text-align:right">Harga akhir</th><th style="width:14%;text-align:right">Total</th></tr></thead>'
-    +'<tbody>'+bodyRows+'</tbody></table>'+summary+'</body></html>';
+    +'<div class="co"><b>PT HESED Kharis Indonesia</b>, Gedung Gravira, Jl Cideng Barat no 54 Jakarta 10150</div>'
+    +'<span class="tag">🔒 INTERNAL · JANGAN DIKIRIM KE KLIEN</span>'
+    +'<div class="ttl"><h1>RINCIAN HARGA</h1><span class="no">'+esc(ref)+'</span></div>'
+    +'<div class="meta">'
+      +'<div><div class="k">Tanggal</div><div class="v">'+esc(date)+'</div></div>'
+      +'<div><div class="k">Kurs</div><div class="v">'+globalFxRate.toLocaleString('id-ID')+'</div></div>'
+      +'<div><div class="k">Kepada Yth.</div><div class="v">'+esc(contact)+(client?(contact?'<br>':'')+esc(client):'')+(address?'<br>'+esc(address):'')+'</div></div>'
+      +'<div><div class="k">Proyek</div><div class="v">'+esc(project)+'</div></div>'
+    +'</div>'
+    +'<table><thead><tr><th style="width:38%">Produk</th><th class="c" style="width:6%">Qty</th><th class="r" style="width:15%">Harga list</th><th class="c" style="width:11%">Diskon</th><th class="r" style="width:15%">Harga</th><th class="r" style="width:15%">Harga QTY</th></tr></thead>'
+    +'<tbody>'+bodyRows+'</tbody></table>'+totals+'</body></html>';
 }
 
 function openInternalSheet(){
