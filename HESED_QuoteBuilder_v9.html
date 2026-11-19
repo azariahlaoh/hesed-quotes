@@ -4455,7 +4455,7 @@ function buildInternalSheetHtml(){
       if(!it.custom){listCat+=l*it.qty;finalCat+=line;}
       var flag='';
       if(!it.custom&&nCat>=3&&modePct!=null&&Math.abs(pct-modePct)>0.05){
-        flag='<div class="flag">⚠ umumnya '+modePct+'%</div>';
+        flag='<div class="flag">⚠ beda, barang lain '+modePct+'%</div>';
         flagged++;
       }
       var how=(pct>0?'list '+fmt(l)+' − '+(Math.round(pct*100)/100)+'%':'')+(pct>0?' · ':'')+esc(internalBreakdown(it));
@@ -4516,7 +4516,7 @@ function buildInternalSheetHtml(){
     +clientTot
     +'</div>'
     +'<div class="chk">'+(matches?'✓ Angka sama dengan dokumen untuk klien':'⚠ Jumlah baris tidak sama dengan total ('+fmt(sumLines+(docLinePpn?rnd:0))+' vs '+fmt(expectSum)+')')+'</div>'
-    +(flagged?'<div class="dnote">⚠ '+flagged+' barang diskonnya beda dari yang umum ('+modePct+'%)</div>':'');
+    +(flagged?'<div class="dnote">⚠ '+flagged+' barang diskonnya tidak sama dengan barang lain (yang lain '+modePct+'%)</div>':'');
 
   return '<!doctype html><html lang="id"><head><meta charset="utf-8"><title>INTERNAL '+esc(ref)+'</title><style>'+css+'</style></head><body>'
     +'<div class="top"><h1>'+esc(ref)+'</h1><span class="tag">🔒 INTERNAL · JANGAN DIKIRIM KE KLIEN</span></div>'
