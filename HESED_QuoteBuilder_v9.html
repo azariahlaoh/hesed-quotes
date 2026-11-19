@@ -4474,7 +4474,8 @@ function buildInternalSheetHtml(){
   var discCat=listCat-finalCat;
   var pctCat=listCat>0?Math.round(discCat/listCat*1000)/10:0;
   var rnd=linePpnRounding();
-  var matches=(sumLines+rnd===grand);
+  var expectSum=docLinePpn?grand:tots.subtotal;
+  var matches=(sumLines+(docLinePpn?rnd:0)===expectSum);
 
   // Totals block mirrors the client document exactly, in whichever mode is on.
   var clientTot;
@@ -4514,7 +4515,7 @@ function buildInternalSheetHtml(){
     +'<div class="row disc"><span>Diskon barang katalog ('+pctCat+'%)</span><span>−'+fmt(discCat)+'</span></div>'
     +clientTot
     +'</div>'
-    +'<div class="chk">'+(matches?'✓ Angka sama dengan dokumen untuk klien':'⚠ Jumlah baris tidak sama dengan total ('+fmt(sumLines+rnd)+' vs '+fmt(grand)+')')+'</div>'
+    +'<div class="chk">'+(matches?'✓ Angka sama dengan dokumen untuk klien':'⚠ Jumlah baris tidak sama dengan total ('+fmt(sumLines+(docLinePpn?rnd:0))+' vs '+fmt(expectSum)+')')+'</div>'
     +(flagged?'<div class="dnote">⚠ '+flagged+' barang diskonnya beda dari yang umum ('+modePct+'%)</div>':'');
 
   return '<!doctype html><html lang="id"><head><meta charset="utf-8"><title>INTERNAL '+esc(ref)+'</title><style>'+css+'</style></head><body>'
