@@ -1110,6 +1110,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
     <button class="btn btn-dark" onclick="printAsRef()">&#128424; Print / Save as PDF</button>
     <button class="btn btn-outline" onclick="exportToWord()">&#128190; Export to Word (.rtf, editable)</button>
     <button class="btn btn-outline" onclick="exportToExcel()">&#128202; Export to Excel</button>
+    <button class="btn btn-outline" onclick="openInternalSheet()" title="Lembar rincian harga &amp; diskon untuk Dave, bukan untuk klien">&#128274; Lembar Internal (PDF)</button>
     <button class="btn btn-outline" onclick="saveQuoteToHistory()">&#9729; Save to history</button>
   </div>
   <div class="print-actions doc-custom-bar">
@@ -4402,6 +4403,129 @@ function updateItemDocDescSize(i,v){
   if(!items[i])return;
   items[i].docDescSize=v; // '' = normal (Sedang)
   renderAll();
+}
+
+
+/* ---- Lembar Internal (for Dave only): price breakdown + discounts, as a printable PDF ---- */
+function internalBreakdown(it){
+  var cat=it.catalogPrice!=null?it.catalogPrice:(it.idrDirect!=null?it.idrDirect:(it.eurPrice!=null?it.eurPrice:(it.idrPrice||0)));
+  var cur=(it.fxOn&&it.fxCurrency)?it.fxCurrency:'IDR';
+  var parts=[(cur==='EUR'?'€':cur+' ')+cat.toLocaleString('id-ID')];
+  if(it.fxOn&&it.fxRate>0)parts.push('× kurs '+it.fxRate.toLocaleString('id-ID'));
+  if(it.twMarkupOn)parts.push('× '+TW_MARKUP);
+  if(it.includesPPN)parts.push('÷ 1,11 (PPN dikeluarkan)');
+  return parts.join(' ');
+}
+
+function buildInternalSheetHtml(){
+  var client=document.getElementById('client').value||'';
+  var ref=getRef()||'';
+  var project=document.getElementById('project').value||'';
+  var dateVal=document.getElementById('qt-date').value;
+  var date=dateVal?dateVal:idDate();
+  var tots=calcTotals();
+  function esc(x){return escapeHtml(String(x==null?'':x));}
+
+  // Most common discount among catalog products — used to flag the odd ones out.
+  var counts={};
+  items.forEach(function(it){
+    if(it.custom)return;
+    var k=itemDiscPct(it).toFixed(1);
+    counts[k]=(counts[k]||0)+1;
+  });
+  var modeKey=null,modeN=0,nCat=0;
+  Object.keys(counts).forEach(function(k){nCat+=counts[k]; if(counts[k]>modeN){modeN=counts[k];modeKey=k;}});
+  var modePct=modeKey==null?null:parseFloat(modeKey);
+
+  var listCat=0,finalCat=0,listCustom=0,finalCustom=0,flagged=0;
+  var groups=groupBySection(items);
+  var no=0;
+  var bodyRows=groups.map(function(g){
+    var secList=0,secFinal=0;
+    var rows=g.items.map(function(it){
+      no++;
+      var u=unitIdr(it), f=unitFinal(it), pct=itemDiscPct(it);
+      var lineList=u*it.qty, lineFinal=f*it.qty;
+      secList+=lineList; secFinal+=lineFinal;
+      if(it.custom){listCustom+=lineList;finalCustom+=lineFinal;}else{listCat+=lineList;finalCat+=lineFinal;}
+      var flag='';
+      if(!it.custom&&nCat>=3&&modePct!=null&&Math.abs(pct-modePct)>0.05){
+        flag='<div class="flag">⚠ beda dari diskon umum ('+modePct+'%)</div>';
+        flagged++;
+      }
+      var discCell=pct>0
+        ? '<b>'+(Math.round(pct*100)/100)+'%</b><div class="sm">−'+fmt(u-f)+' / unit</div>'
+        : '<span class="sm">—</span>';
+      return '<tr>'
+        +'<td class="c">'+no+'</td>'
+        +'<td><b>'+esc(it.displayName||it.code)+'</b>'+(it.custom?' <span class="tag">custom</span>':'')+'<div class="sm">'+esc(it.series||'')+'</div></td>'
+        +'<td class="c">'+it.qty+'</td>'
+        +'<td class="sm2">'+esc(internalBreakdown(it))+'</td>'
+        +'<td class="r">'+fmt(u)+'</td>'
+        +'<td class="c">'+discCell+flag+'</td>'
+        +'<td class="r"><b>'+fmt(f)+'</b></td>'
+        +'<td class="r"><b>'+fmt(lineFinal)+'</b></td>'
+        +'</tr>';
+    }).join('');
+    var head=g.name?'<tr class="sec"><td colspan="8">'+esc(g.name)+'</td></tr>':'';
+    var secDisc=secList-secFinal;
+    var foot='<tr class="subt"><td colspan="4" class="r">Subtotal'+(g.name?' — '+esc(g.name):'')+'</td><td class="r">'+fmt(secList)+'</td><td class="c">'+(secList>0&&secDisc!==0?(Math.round(secDisc/secList*1000)/10)+'%':'')+'</td><td></td><td class="r"><b>'+fmt(secFinal)+'</b></td></tr>';
+    return head+rows+foot;
+  }).join('');
+
+  var listAll=listCat+listCustom;
+  var discAll=listAll-(finalCat+finalCustom);
+  var pctAll=listAll>0?Math.round(discAll/listAll*1000)/10:0;
+  var discCat=listCat-finalCat;
+  var pctCat=listCat>0?Math.round(discCat/listCat*1000)/10:0;
+
+  var css='@page{size:A4 landscape;margin:10mm}*{box-sizing:border-box}body{font-family:Inter,Arial,sans-serif;color:#222;font-size:10.5px;margin:0}'
+   +'.ban{background:#b3261e;color:#fff;font-weight:700;letter-spacing:.06em;padding:6px 10px;font-size:11px;display:flex;justify-content:space-between}'
+   +'h1{font-size:17px;margin:10px 0 2px}.meta{color:#555;margin-bottom:8px}.meta b{color:#222}'
+   +'table{width:100%;border-collapse:collapse}th{background:#313131;color:#fff;text-align:left;padding:5px 6px;font-size:9.5px;letter-spacing:.03em}'
+   +'td{padding:5px 6px;border-bottom:1px solid #e3e3e3;vertical-align:top}.r{text-align:right;white-space:nowrap}.c{text-align:center}'
+   +'.sm{color:#777;font-size:9px;margin-top:1px}.sm2{color:#555;font-size:9.5px}.tag{background:#eee;border-radius:3px;padding:0 4px;font-size:8.5px;color:#555}'
+   +'.flag{color:#b3261e;font-size:8.8px;margin-top:2px;font-weight:600}'
+   +'tr.sec td{background:#f1ece1;font-weight:700;padding:6px}tr.subt td{background:#fafafa;border-top:1px solid #bbb}'
+   +'tr{page-break-inside:avoid}'
+   +'.sum{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:16px;page-break-inside:avoid}'
+   +'.box{border:1px solid #ccc;border-radius:6px;padding:8px 10px}.box h3{margin:0 0 6px;font-size:11px}'
+   +'.kv{display:flex;justify-content:space-between;padding:2px 0}.kv.big{border-top:1px solid #333;margin-top:4px;padding-top:5px;font-size:13px;font-weight:700}'
+   +'.note{color:#b3261e;font-weight:600;margin-top:6px}';
+
+  var summary='<div class="sum">'
+    +'<div class="box"><h3>Diskon</h3>'
+      +'<div class="kv"><span>Barang katalog: harga list</span><span>'+fmt(listCat)+'</span></div>'
+      +'<div class="kv"><span>Barang katalog: setelah diskon</span><span>'+fmt(finalCat)+'</span></div>'
+      +'<div class="kv"><b>Diskon barang katalog</b><b>'+fmt(discCat)+' ('+pctCat+'%)</b></div>'
+      +(listCustom||finalCustom?'<div class="kv"><span>Item custom / jasa</span><span>'+fmt(finalCustom)+'</span></div>':'')
+      +'<div class="kv"><span>Diskon seluruh quotation</span><span>'+fmt(discAll)+' ('+pctAll+'%)</span></div>'
+      +(flagged?'<div class="note">⚠ '+flagged+' barang diskonnya beda dari yang umum ('+modePct+'%). Cek tanda merah di tabel.</div>':'')
+    +'</div>'
+    +'<div class="box"><h3>Total</h3>'
+      +'<div class="kv"><span>Subtotal (sebelum PPN)</span><span>'+fmt(tots.subtotal)+'</span></div>'
+      +'<div class="kv"><span>PPN 11%</span><span>'+fmt(tots.ppn)+'</span></div>'
+      +'<div class="kv big"><span>Grand total</span><span>'+fmt(tots.grand)+'</span></div>'
+    +'</div></div>';
+
+  return '<!doctype html><html lang="id"><head><meta charset="utf-8"><title>INTERNAL '+esc(ref)+'</title><style>'+css+'</style></head><body>'
+    +'<div class="ban"><span>🔒 LEMBAR INTERNAL — JANGAN DIKIRIM KE KLIEN</span><span>PT HESED Kharis Indonesia</span></div>'
+    +'<h1>Rincian harga &amp; diskon</h1>'
+    +'<div class="meta"><b>'+esc(ref)+'</b> &middot; '+esc(date)+(client?' &middot; '+esc(client):'')+(project?' &middot; '+esc(project):'')
+      +' &middot; Kurs '+globalFxRate.toLocaleString('id-ID')+'</div>'
+    +'<table><thead><tr><th style="width:3%">#</th><th style="width:20%">Produk</th><th style="width:4%">Qty</th><th style="width:21%">Harga list &amp; rincian</th>'
+    +'<th style="width:12%;text-align:right">Sebelum diskon</th><th style="width:11%;text-align:center">Diskon</th><th style="width:13%;text-align:right">Harga akhir</th><th style="width:14%;text-align:right">Total</th></tr></thead>'
+    +'<tbody>'+bodyRows+'</tbody></table>'+summary+'</body></html>';
+}
+
+function openInternalSheet(){
+  if(!items.length){alert('Tambahkan barang dulu di tab Builder.');return;}
+  var html=buildInternalSheetHtml();
+  var w=window.open('','_blank');
+  if(!w){alert('Pop-up diblokir. Izinkan pop-up untuk halaman ini lalu coba lagi.');return;}
+  w.document.open();w.document.write(html);w.document.close();
+  w.focus();
+  setTimeout(function(){try{w.print();}catch(e){}},600);
 }
 
 function buildDoc(){
