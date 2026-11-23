@@ -356,9 +356,28 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .pg-addbar{margin:8px 0}.pg-addbtn{width:100%;border:1.5px dashed #c9a227;background:#fffbea;color:#6b5a1b;border-radius:8px;padding:9px;font-size:12px;cursor:pointer}
 @media (max-width:800px){.pg-add{left:8px;right:8px;top:auto;bottom:8px;width:auto;max-height:60vh}}
 @media print{.pg-ctl,.pg-addbar,.pg-add,.pg-toolbar{display:none!important}}
+.pv-sticky{position:sticky;top:0;z-index:60;background:var(--bg,#f4f5f7);padding:8px 0 4px;margin-bottom:8px;box-shadow:0 8px 10px -9px rgba(0,0,0,.3)}
+.pv-collapse{position:absolute;right:0;top:8px;border:1px solid #ccc;background:#fff;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:12px;z-index:2}
+.pv-sticky .print-actions{margin-right:38px}
+.pv-collapsed .print-actions .btn:not(#pg-toggle):not(.btn-dark){display:none}
+.pv-collapsed .doc-custom-bar{display:none}
+.pv-collapsed .print-actions{margin-bottom:6px}
+@media (max-width:800px){.pv-sticky .print-actions{flex-direction:row;flex-wrap:wrap}}
+@media print{.pv-sticky{position:static;box-shadow:none}.pv-collapse{display:none}}
+.pg-badge{background:#c9a227;color:#111;border-radius:10px;padding:1px 8px;font-size:11px;font-weight:700;margin-left:4px}
+.pg-bottom{position:sticky;bottom:-12px;margin:10px -12px -12px;background:#fffbea;border-top:2px solid #c9a227;border-radius:0 0 12px 12px;z-index:3}
+.pg-cartbox{padding:8px 12px 12px;border-top:1px dashed #d8bd5a;background:#fff}
+.pg-cartbox .hd{font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.pg-cl{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #f0f0f0;font-size:12px}
+.pg-cl img,.pg-cl .ph{width:30px;height:24px;object-fit:contain;background:#f4f4f4;border-radius:4px;flex:0 0 30px}
+.pg-cl .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pg-cl .st{display:inline-flex;border:1px solid #ddd;border-radius:6px;overflow:hidden}.pg-cl .st button{border:0;background:#fff;width:22px;height:22px;cursor:pointer}.pg-cl .st span{min-width:24px;text-align:center;font-weight:700;line-height:22px}
+.pg-cl .x{border:0;background:none;color:#b3261e;cursor:pointer;font-size:14px}
+.pg-cartbox select{width:100%;border:1px solid #cfcfcf;border-radius:8px;padding:7px;font-size:12px;margin:6px 0}
+.pg-cartbox .lst{max-height:128px;overflow:auto}
 .pg-fxl{font-size:12px;color:#6b5a1b;display:inline-flex;align-items:center;gap:4px}.pg-fxl input{width:78px;border:1px solid #cdb55a;border-radius:6px;padding:3px 6px;font-size:12px}
 .pg-res.sel{background:#fff3c4;box-shadow:inset 3px 0 0 #c9a227}
-.pg-sel{position:sticky;bottom:-12px;margin:10px -12px -12px;padding:10px 12px 12px;background:#fffbea;border-top:2px solid #c9a227;border-radius:0 0 12px 12px}
+.pg-sel{padding:10px 12px 12px}
 .pg-sel-top{display:flex;gap:10px;align-items:center;margin-bottom:8px}
 .pg-sel-img{width:76px;height:60px;flex:0 0 76px;object-fit:contain;background:#fff;border-radius:7px;border:1px solid #eee}
 .pg-sel-img.ph{display:flex;align-items:center;justify-content:center;font-size:10px;color:#999;text-align:center}
@@ -397,7 +416,8 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 @media print{.pg-gut,.pg-secbar,.pg-toasts{display:none!important}}
 .pg-toolbar{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:#fff8dc;border:1px solid #e6cf7a;border-radius:8px;padding:6px 10px;margin:8px auto;max-width:794px;font-size:12px}
 .pg-toolbar button{border:1px solid #cdb55a;background:#fff;border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer}
-.pg-toolbar .pg-hint{flex:1 1 100%;color:#6b5a1b}
+.pg-toolbar .pg-hint{display:none}
+.pg-toolbar{padding:4px 8px!important;margin:2px 0 0!important;max-width:none!important}
 @media screen{
   .pg-mode .pg-ed{outline:none;border-radius:2px;cursor:text;transition:background .15s}
   .pg-mode .pg-ed:hover{background:rgba(255,226,120,.28)}
@@ -1171,6 +1191,30 @@ td:nth-child(4),th:nth-child(4){text-align:center}
     <span id="doc-footer-left"></span>
     <span id="doc-footer-right"></span>
   </div>
+  <div id="pg-add" class="pg-add" style="display:none">
+  <div class="pg-add-hd"><div><b>Tambah produk</b> <span id="pg-cart-badge" class="pg-badge" style="display:none"></span><div id="pg-add-sec" class="pg-add-sec"></div></div><button type="button" onclick="pgCloseAdd()">Selesai</button></div>
+  <div class="pg-add-tabs"><button type="button" id="pg-tab-cat" class="on" onclick="pgTab('cat')">Katalog</button><button type="button" id="pg-tab-cus" onclick="pgTab('cus')">Custom / jasa</button></div>
+  <div id="pg-cat">
+    <input id="pg-q" class="pg-q" placeholder="Cari: VERA50, ELLA6, LSK44, kabel..." oninput="pgSearch()" autocomplete="off">
+    <div id="pg-results" class="pg-results"></div>
+    <div id="pg-pair" class="pg-pair"></div>
+    <div id="pg-log" class="pg-log"></div>
+  </div>
+  <div id="pg-cus" style="display:none">
+    <div class="pg-libhd">Pernah dibuat (dari export / quotation lama)</div>
+    <input id="pg-lib-q" class="pg-q" placeholder="Cari custom lama..." oninput="pgLibRender()" autocomplete="off">
+    <div id="pg-lib" class="pg-results" style="max-height:30vh"></div>
+    <div class="pg-libhd" style="margin-top:10px">Atau buat baru</div>
+    <input id="pg-c-code" class="pg-q" placeholder="Nama / kode item">
+    <input id="pg-c-desc" class="pg-q" placeholder="Deskripsi">
+    <div class="pg-row2"><label>Harga <input id="pg-c-price" type="number" step="1000" placeholder="boleh minus"></label><label>Qty <input id="pg-c-qty" type="number" min="0" value="0"></label></div>
+    <button type="button" class="pg-go" onclick="pgAddCustom()">&#65291; Tambah ke quotation</button>
+  </div>
+  <div class="pg-bottom"><div id="pg-sel" class="pg-sel" style="display:none"></div><div id="pg-cartbox" class="pg-cartbox" style="display:none"></div></div>
+</div>
+<div id="pg-toasts" class="pg-toasts"></div>
+  <div id="pv-sticky" class="pv-sticky">
+  <button type="button" id="pv-collapse" class="pv-collapse" onclick="pvToggle()" title="Ciutkan / tampilkan menu">&#9650;</button>
   <div class="print-actions">
     <button class="btn btn-outline" onclick="showTab('builder')">&larr; Back to builder</button>
     <button class="btn btn-dark" onclick="printAsRef()">&#128424; Print / Save as PDF</button>
@@ -1197,28 +1241,6 @@ td:nth-child(4),th:nth-child(4){text-align:center}
     </label>
     <span class="print-tip">Print dialog &rarr; destination "Save as PDF" &middot; set margins to Minimum or None</span>
   </div>
-  <div id="pg-add" class="pg-add" style="display:none">
-  <div class="pg-add-hd"><div><b>Tambah produk</b><div id="pg-add-sec" class="pg-add-sec"></div></div><button type="button" onclick="pgCloseAdd()">Selesai</button></div>
-  <div class="pg-add-tabs"><button type="button" id="pg-tab-cat" class="on" onclick="pgTab('cat')">Katalog</button><button type="button" id="pg-tab-cus" onclick="pgTab('cus')">Custom / jasa</button></div>
-  <div id="pg-cat">
-    <input id="pg-q" class="pg-q" placeholder="Cari: VERA50, ELLA6, LSK44, kabel..." oninput="pgSearch()" autocomplete="off">
-    <div id="pg-results" class="pg-results"></div>
-    <div id="pg-pair" class="pg-pair"></div>
-    <div id="pg-log" class="pg-log"></div>
-  </div>
-  <div id="pg-cus" style="display:none">
-    <div class="pg-libhd">Pernah dibuat (dari export / quotation lama)</div>
-    <input id="pg-lib-q" class="pg-q" placeholder="Cari custom lama..." oninput="pgLibRender()" autocomplete="off">
-    <div id="pg-lib" class="pg-results" style="max-height:30vh"></div>
-    <div class="pg-libhd" style="margin-top:10px">Atau buat baru</div>
-    <input id="pg-c-code" class="pg-q" placeholder="Nama / kode item">
-    <input id="pg-c-desc" class="pg-q" placeholder="Deskripsi">
-    <div class="pg-row2"><label>Harga <input id="pg-c-price" type="number" step="1000" placeholder="boleh minus"></label><label>Qty <input id="pg-c-qty" type="number" min="0" value="0"></label></div>
-    <button type="button" class="pg-go" onclick="pgAddCustom()">&#65291; Tambah ke quotation</button>
-  </div>
-  <div id="pg-sel" class="pg-sel" style="display:none"></div>
-</div>
-<div id="pg-toasts" class="pg-toasts"></div>
 <div id="pg-toolbar" class="pg-toolbar" style="display:none">
   <span class="pg-hint">Klik teks di halaman untuk mengedit. Harga, qty, dan total terkunci.</span>
   <button type="button" onmousedown="event.preventDefault()" onclick="pgCmd('bold')" title="Tebal"><b>B</b></button>
@@ -1231,6 +1253,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
   <button type="button" onmousedown="event.preventDefault()" onclick="pgNewSection()">&#65291; Bagian baru</button>
   <button type="button" onmousedown="event.preventDefault()" onclick="pgNewPage()">&#65291; Halaman teks</button>
   <button type="button" onmousedown="event.preventDefault()" onclick="pgClearAll()">Hapus semua edit</button>
+</div>
 </div>
 <div class="doc-wrap" id="doc-wrap">
     <div class="empty-state" style="padding:60px 20px;background:#fff;border-radius:4px">Add items in the Builder tab first.</div>
@@ -4698,7 +4721,7 @@ function applyPagesUi(){
   var w=document.getElementById('doc-wrap'); if(w)w.classList.toggle('pg-mode',pagesMode);
   if(typeof pgSyncFx==='function')pgSyncFx();
 }
-function togglePagesMode(){pagesMode=!pagesMode;if(!pagesMode&&typeof pgCloseAdd==='function')pgCloseAdd();applyPagesUi();buildDoc();}
+function togglePagesMode(){pagesMode=!pagesMode;if(pagesMode&&typeof pvToggle==='function')pvToggle(true);if(!pagesMode&&typeof pgCloseAdd==='function')pgCloseAdd();applyPagesUi();buildDoc();}
 function pgCmd(c){document.execCommand(c,false,null);}
 function pgSize(d){
   var cur=parseInt(document.queryCommandValue('fontSize'),10)||3;
@@ -4816,7 +4839,7 @@ function pgOpenAdd(sec,insertAt,label){
   pgInsertAt=(insertAt==null||insertAt==='')?null:insertAt;
   document.getElementById('pg-add-sec').textContent='ke bagian: '+(pgAddSection||'(Umum)')+(label?(' · '+label):'');
   document.getElementById('pg-add').style.display='block';
-  pgTab(pgAddTab);pgSearch();pgRenderSel();
+  pgTab(pgAddTab);pgSearch();pgRenderSel();pgRenderCart();
   setTimeout(function(){var q=document.getElementById(pgAddTab==='cat'?'pg-q':'pg-lib-q');if(q)q.focus();},30);
 }
 function pgOpenAddAfter(uid){
@@ -4887,39 +4910,102 @@ function pgRenderSel(){
     +'Diskon <input class="sm" type="number" min="0" max="100" step="0.5" value="'+(pgSelDisc||'')+'" placeholder="0" onchange="pgSelDisc=Math.max(0,Math.min(100,parseFloat(this.value)||0))">%'
     +'</div>'
     +((isCat&&!isSM)?'<div class="pg-sel-row"><label><input type="checkbox" '+(pgSelTw?'checked':'')+' onchange="pgSelTw=this.checked"> &times;1,8</label>&nbsp; Kurs <input class="sm" style="width:78px" type="number" step="100" value="'+globalFxRate+'" onchange="pgSetFx(this.value)"></div>':'')
-    +'<button type="button" class="pg-go" '+(pgSelQty<1?'disabled':'')+' onclick="pgCommit()">'+(pgSelQty<1?'Isi qty dulu':'&#65291; Tambah ke quotation (&times;'+pgSelQty+')')+'</button>'
+    +'<button type="button" class="pg-go" '+(pgSelQty<1?'disabled':'')+' onclick="pgCommit()">'+(pgSelQty<1?'Isi qty dulu':'\uD83D\uDED2 Tambah ke keranjang (&times;'+pgSelQty+')')+'</button>'
     +(pgSelNote?'<div class="pg-note">'+escapeHtml(pgSelNote)+'</div>':'');
 }
 function pgSelQtyAdj(d){pgSelQty=Math.max(0,pgSelQty+d);pgRenderSel();}
 function pgSelQtySet(v){pgSelQty=Math.max(0,parseInt(v,10)||0);pgRenderSel();}
 function pgSyncFx(){var f=document.getElementById('pg-fx');if(f)f.value=globalFxRate;var g=document.getElementById('global-fx-rate');if(g)g.value=globalFxRate;}
 function pgSetFx(v){onGlobalFxRateChange(v);pgSyncFx();pgRenderSel();pgRefresh();}
-function pgCommit(){
+var pgCart=[];
+function pgCartKey(l){return l.kind==='cat'?('c'+l.k+'|'+l.disc+'|'+(l.tw?1:0)):('l'+customLibKey(l.c)+'|'+l.disc);}
+function pgCommit(){ // = "Tambah ke keranjang" (nothing reaches the quotation yet)
   if(!pgSel||pgSelQty<1)return;
-  var qty=pgSelQty, disc=pgSelDisc||0, code;
+  var line=pgSel.kind==='cat'
+    ?{kind:'cat',k:pgSel.k,qty:pgSelQty,disc:pgSelDisc||0,tw:pgSelTw}
+    :{kind:'lib',c:pgSel.c,qty:pgSelQty,disc:pgSelDisc||0};
+  var key=pgCartKey(line), found=pgCart.filter(function(l){return pgCartKey(l)===key;})[0];
+  if(found)found.qty+=line.qty; else pgCart.push(line);
+  var code=pgSel.kind==='cat'?PRODUCTS[pgSel.k].code:pgSel.c.code;
+  pgSelNote='✓ '+code+' ×'+line.qty+' masuk keranjang. Qty kembali ke 0.';
+  pgSelQty=0; pgRenderSel(); pgRenderCart();
   if(pgSel.kind==='cat'){
-    var p=PRODUCTS[pgSel.k]; code=p.code;
-    pgEnsureSection();
-    addProductToItems(p,qty,{fxOn:true,fxRate:globalFxRate,fxCurrency:'EUR',itemDisc:disc,twMarkupOn:pgSelTw});
-    pgPlaceNew();
+    var pcode=code;
     ensurePairingData(function(){
-      var sug=suggestPairingsFor(p.code), box=document.getElementById('pg-pair');
-      box.innerHTML=sug.length?('Sering bersama '+escapeHtml(p.code)+': '+sug.map(function(s2){
+      var sug=suggestPairingsFor(pcode), box=document.getElementById('pg-pair');
+      box.innerHTML=sug.length?('Sering bersama '+escapeHtml(pcode)+': '+sug.map(function(s2){
         var idx=PRODUCTS.findIndex(function(x){return x.code===s2.code;});
         return idx<0?'':'<button type="button" onclick="pgSelectCat('+idx+')">'+escapeHtml(s2.code)+'</button>';
       }).join('')):'';
     });
-  } else {
-    var c=pgSel.c; code=c.code;
-    pgPushCustom(c.code,c.desc,c.price,qty,disc,c.specs||'');
   }
-  pgAddLog.unshift('✓ '+code+' ×'+qty+(disc?(' (diskon '+disc+'%)'):''));
-  document.getElementById('pg-log').innerHTML=pgAddLog.slice(0,6).map(escapeHtml).join('<br>');
-  pgSelNote='✓ '+code+' ×'+qty+' ditambahkan. Qty kembali ke 0.';
-  pgSelQty=0;
-  pgRenderSel();
-  pgRefresh();
 }
+function pgCartLabel(l){return l.kind==='cat'?PRODUCTS[l.k].code:l.c.code;}
+function pgRenderCart(){
+  var box=document.getElementById('pg-cartbox'), badge=document.getElementById('pg-cart-badge'); if(!box)return;
+  var n=pgCart.reduce(function(a,l){return a+l.qty;},0);
+  if(badge){badge.style.display=pgCart.length?'inline-block':'none';badge.textContent='🛒 '+n;}
+  if(!pgCart.length){box.style.display='none';return;}
+  box.style.display='block';
+  var secs=sectionList.slice(); if(pgAddSection!=null&&secs.indexOf(pgAddSection)===-1)secs.push(pgAddSection);
+  var opts=secs.map(function(n2){return '<option value="'+escapeHtml(n2)+'"'+((n2===(pgAddSection||''))?' selected':'')+'>'+escapeHtml(n2||'(Umum)')+'</option>';}).join('');
+  box.innerHTML='<div class="hd">🛒 Keranjang ('+pgCart.length+' produk)</div><div class="lst">'
+    +pgCart.map(function(l,i){
+      var img=l.kind==='cat'?productImageSrc(PRODUCTS[l.k].code):'';
+      return '<div class="pg-cl">'+(img?'<img src="'+img+'" alt="">':'<div class="ph"></div>')+'<span class="nm">'+escapeHtml(pgCartLabel(l))+(l.disc?(' · '+l.disc+'%'):'')+'</span>'
+        +'<span class="st"><button type="button" onclick="pgCartQty('+i+',-1)">&minus;</button><span>'+l.qty+'</span><button type="button" onclick="pgCartQty('+i+',1)">+</button></span>'
+        +'<button type="button" class="x" onclick="pgCartDel('+i+')" title="Keluarkan">&times;</button></div>';
+    }).join('')
+    +'</div><div style="font-size:11px;color:#666;margin-top:6px">Masukkan ke bagian'+(pgInsertAt!=null?' (di posisi yang dipilih)':'')+':</div>'
+    +'<select id="pg-cart-sec" onchange="pgCartSecChange(this.value)">'+opts+'<option value="__new__">＋ Bagian baru…</option></select>'
+    +'<button type="button" class="pg-go" onclick="pgCartPlace()">Masukkan ke quotation ('+n+' unit)</button>';
+}
+function pgCartQty(i,d){var l=pgCart[i];if(!l)return;l.qty=Math.max(0,l.qty+d);if(l.qty<1)pgCart.splice(i,1);pgRenderCart();}
+function pgCartDel(i){pgCart.splice(i,1);pgRenderCart();}
+function pgCartSecChange(v){
+  if(v==='__new__'){
+    var name=prompt('Nama bagian baru:','');
+    if(name&&name.trim()){name=name.trim();if(sectionList.indexOf(name)===-1)sectionList.push(name);pgAddSection=name;}
+    pgInsertAt=null;
+    document.getElementById('pg-add-sec').textContent='ke bagian: '+(pgAddSection||'(Umum)');
+    pgRenderCart();return;
+  }
+  if(v!==(pgAddSection||''))pgInsertAt=null;
+  pgAddSection=v;
+  document.getElementById('pg-add-sec').textContent='ke bagian: '+(v||'(Umum)');
+  pgRenderCart();
+}
+function pgCartPlace(){
+  if(!pgCart.length)return;
+  var sel=document.getElementById('pg-cart-sec'); if(sel&&sel.value!=='__new__')pgAddSection=sel.value;
+  var n=0,secName=pgAddSection||'(Umum)';
+  pgCart.forEach(function(l){
+    if(l.kind==='cat'){
+      var p=PRODUCTS[l.k]; pgEnsureSection();
+      addProductToItems(p,l.qty,{fxOn:true,fxRate:globalFxRate,fxCurrency:'EUR',itemDisc:l.disc,twMarkupOn:l.tw});
+      pgPlaceNew();
+    } else {
+      pgPushCustom(l.c.code,l.c.desc,l.c.price,l.qty,l.disc,l.c.specs||'');
+    }
+    n++;
+    pgAddLog.unshift('✓ '+pgCartLabel(l)+' ×'+l.qty+' → '+secName);
+  });
+  pgCart=[];
+  document.getElementById('pg-log').innerHTML=pgAddLog.slice(0,6).map(escapeHtml).join('<br>');
+  pgSelNote='✓ '+n+' produk dimasukkan ke “'+secName+'”.';
+  pgRenderSel(); pgRenderCart(); pgRefresh();
+}
+function pvToggle(force){
+  var el=document.getElementById('pv-sticky'); if(!el)return;
+  var c=(typeof force==='boolean')?force:!el.classList.contains('pv-collapsed');
+  el.classList.toggle('pv-collapsed',c);
+  var b=document.getElementById('pv-collapse'); if(b)b.innerHTML=c?'&#9660;':'&#9650;';
+  try{localStorage.setItem('hesed_pv_collapsed',c?'1':'0');}catch(e){}
+}
+(function(){
+  var saved=null; try{saved=localStorage.getItem('hesed_pv_collapsed');}catch(e){}
+  pvToggle(saved==null?window.innerWidth<800:saved==='1');
+})();
 function pgPushCustom(code,desc,price,qty,disc,specs){
   pgEnsureSection();
   items.push({code:code,displayName:code,series:'Custom',desc:desc||code,catalogPrice:price,eurPrice:null,idrPrice:null,idrDirect:null,qty:qty,specs:specs||'',custom:true,section:currentSection,includesPPN:false,fxOn:false,fxRate:0,fxCurrency:'',itemDisc:disc||0,twMarkupOn:false,docImgSize:'lg',docDescSize:'md'});
