@@ -339,6 +339,23 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 /* ── CUSTOM CONTENT BLOCK PAGE ───────────────────────────────── */
 .block-page-img{width:100%;max-height:200mm;object-fit:contain;display:block;margin:0 auto}
 .block-page-caption{font-size:9.5px;color:#888;text-align:center;margin-top:4mm;font-style:italic}
+.pg-add{position:fixed;right:14px;top:70px;width:360px;max-height:calc(100vh - 90px);overflow:auto;z-index:80;background:#fff;border:1px solid #d6d6d6;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.18);padding:12px;font-size:13px}
+.pg-add-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px}.pg-add-sec{font-size:11px;color:#777;margin-top:2px}
+.pg-add button{cursor:pointer}.pg-add-hd button{border:0;background:#1b1b1b;color:#fff;border-radius:8px;padding:6px 12px;font-size:12px}
+.pg-add-tabs{display:flex;gap:6px;margin-bottom:8px}.pg-add-tabs button{flex:1;border:1px solid #ddd;background:#fafafa;border-radius:8px;padding:5px;font-size:12px}.pg-add-tabs button.on{background:#1b1b1b;color:#fff;border-color:#1b1b1b}
+.pg-q{width:100%;border:1px solid #cfcfcf;border-radius:8px;padding:8px 10px;font-size:14px;margin-bottom:6px}
+.pg-row2{display:flex;gap:8px;margin-bottom:6px}.pg-row2 label{flex:1;font-size:11px;color:#666}.pg-row2 input{width:100%;border:1px solid #cfcfcf;border-radius:6px;padding:5px 7px;font-size:13px}
+.pg-results{max-height:46vh;overflow:auto;border-top:1px solid #eee}
+.pg-res{padding:7px 4px;border-bottom:1px solid #eee;cursor:pointer}.pg-res:hover{background:#fff8dc}.pg-res b{font-size:13px}.pg-res .d{font-size:11px;color:#777;line-height:1.3}.pg-res .p{float:right;font-size:11px;color:#444}
+.pg-pair{margin-top:8px;display:flex;flex-wrap:wrap;gap:5px;align-items:center;font-size:11px;color:#666}.pg-pair button{border:1px solid #e0c96a;background:#fff8dc;border-radius:14px;padding:3px 9px;font-size:11px}
+.pg-log{margin-top:8px;font-size:11px;color:#2e7d32;line-height:1.5}
+.pg-go{width:100%;border:0;background:#1b1b1b;color:#fff;border-radius:8px;padding:9px;font-size:13px}
+.pg-ctl{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:5px;font-size:10px;color:#777}
+.pg-ctl button{border:1px solid #ccc;background:#fff;border-radius:4px;padding:1px 6px;font-size:11px;cursor:pointer}
+.pg-ctl input{width:42px;border:1px solid #ccc;border-radius:4px;padding:1px 3px;font-size:11px;text-align:center}
+.pg-addbar{margin:8px 0}.pg-addbtn{width:100%;border:1.5px dashed #c9a227;background:#fffbea;color:#6b5a1b;border-radius:8px;padding:9px;font-size:12px;cursor:pointer}
+@media (max-width:800px){.pg-add{left:8px;right:8px;top:auto;bottom:8px;width:auto;max-height:60vh}}
+@media print{.pg-ctl,.pg-addbar,.pg-add,.pg-toolbar{display:none!important}}
 .pg-toolbar{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:#fff8dc;border:1px solid #e6cf7a;border-radius:8px;padding:6px 10px;margin:8px auto;max-width:794px;font-size:12px}
 .pg-toolbar button{border:1px solid #cdb55a;background:#fff;border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer}
 .pg-toolbar .pg-hint{flex:1 1 100%;color:#6b5a1b}
@@ -1141,7 +1158,24 @@ td:nth-child(4),th:nth-child(4){text-align:center}
     </label>
     <span class="print-tip">Print dialog &rarr; destination "Save as PDF" &middot; set margins to Minimum or None</span>
   </div>
-  <div id="pg-toolbar" class="pg-toolbar" style="display:none">
+  <div id="pg-add" class="pg-add" style="display:none">
+  <div class="pg-add-hd"><div><b>Tambah produk</b><div id="pg-add-sec" class="pg-add-sec"></div></div><button type="button" onclick="pgCloseAdd()">Selesai</button></div>
+  <div class="pg-add-tabs"><button type="button" id="pg-tab-cat" class="on" onclick="pgTab('cat')">Katalog</button><button type="button" id="pg-tab-cus" onclick="pgTab('cus')">Custom / jasa</button></div>
+  <div id="pg-cat">
+    <input id="pg-q" class="pg-q" placeholder="Cari: VERA50, ELLA6, LSK44, kabel..." oninput="pgSearch()" autocomplete="off">
+    <div class="pg-row2"><label>Qty <input id="pg-qty" type="number" min="1" value="1"></label><label>Diskon % <input id="pg-disc" type="number" min="0" max="100" step="0.5" value="0"></label></div>
+    <div id="pg-results" class="pg-results"></div>
+    <div id="pg-pair" class="pg-pair"></div>
+    <div id="pg-log" class="pg-log"></div>
+  </div>
+  <div id="pg-cus" style="display:none">
+    <input id="pg-c-code" class="pg-q" placeholder="Nama / kode item">
+    <input id="pg-c-desc" class="pg-q" placeholder="Deskripsi">
+    <div class="pg-row2"><label>Harga <input id="pg-c-price" type="number" step="1000" placeholder="boleh minus"></label><label>Qty <input id="pg-c-qty" type="number" min="1" value="1"></label></div>
+    <button type="button" class="pg-go" onclick="pgAddCustom()">Tambahkan</button>
+  </div>
+</div>
+<div id="pg-toolbar" class="pg-toolbar" style="display:none">
   <span class="pg-hint">Klik teks di halaman untuk mengedit. Harga, qty, dan total terkunci.</span>
   <button type="button" onmousedown="event.preventDefault()" onclick="pgCmd('bold')" title="Tebal"><b>B</b></button>
   <button type="button" onmousedown="event.preventDefault()" onclick="pgCmd('italic')" title="Miring"><i>I</i></button>
@@ -1149,7 +1183,8 @@ td:nth-child(4),th:nth-child(4){text-align:center}
   <button type="button" onmousedown="event.preventDefault()" onclick="pgSize(-1)" title="Perkecil huruf">A&minus;</button>
   <button type="button" onmousedown="event.preventDefault()" onclick="pgSize(1)" title="Perbesar huruf">A+</button>
   <button type="button" onmousedown="event.preventDefault()" onclick="pgResetOne()" title="Kembalikan teks yang sedang dipilih ke aslinya">&#8634; Teks asli</button>
-  <button type="button" onmousedown="event.preventDefault()" onclick="pgNewPage()">&#65291; Halaman baru</button>
+  <button type="button" onmousedown="event.preventDefault()" onclick="pgNewSection()">&#65291; Bagian baru</button>
+  <button type="button" onmousedown="event.preventDefault()" onclick="pgNewPage()">&#65291; Halaman teks</button>
   <button type="button" onmousedown="event.preventDefault()" onclick="pgClearAll()">Hapus semua edit</button>
 </div>
 <div class="doc-wrap" id="doc-wrap">
@@ -4614,7 +4649,7 @@ function applyPagesUi(){
   var tb=document.getElementById('pg-toolbar'); if(tb)tb.style.display=pagesMode?'flex':'none';
   var w=document.getElementById('doc-wrap'); if(w)w.classList.toggle('pg-mode',pagesMode);
 }
-function togglePagesMode(){pagesMode=!pagesMode;applyPagesUi();buildDoc();}
+function togglePagesMode(){pagesMode=!pagesMode;if(!pagesMode&&typeof pgCloseAdd==='function')pgCloseAdd();applyPagesUi();buildDoc();}
 function pgCmd(c){document.execCommand(c,false,null);}
 function pgSize(d){
   var cur=parseInt(document.queryCommandValue('fontSize'),10)||3;
@@ -4657,10 +4692,115 @@ document.addEventListener('focusout',function(e){
   },450);
 });
 
+/* ---- Mode Pages: add / change products right on the page ---- */
+var pgAddSection=null, pgAddTab='cat', pgAddLog=[];
+function pgRefresh(){
+  // deferred: a qty/discount <input> in the document fires change while it is still
+  // focused, and re-rendering inside that blur would try to remove a node mid-event
+  setTimeout(function(){var y=window.scrollY;renderAll();buildDoc();window.scrollTo(0,y);},0);
+}
+function pgQtySet(i,v){if(!items[i])return;items[i].qty=Math.max(1,parseInt(v,10)||1);pgRefresh();}
+function pgQty(i,d){if(items[i])pgQtySet(i,(items[i].qty||1)+d);}
+function pgDisc(i,v){if(!items[i])return;items[i].itemDisc=Math.max(0,Math.min(100,parseFloat(v)||0));pgRefresh();}
+function pgDel(i){
+  if(!items[i])return;
+  if(!confirm('Hapus '+(items[i].displayName||items[i].code)+' dari quotation?'))return;
+  items.splice(i,1);pgRefresh();
+}
+function pgMove(i,dir){
+  var it=items[i]; if(!it)return;
+  var j=i+dir;
+  while(j>=0&&j<items.length&&(items[j].section||'')!==(it.section||''))j+=dir;
+  if(j<0||j>=items.length)return;
+  var t=items[i];items[i]=items[j];items[j]=t;pgRefresh();
+}
+function pgRowCtl(it){
+  var i=items.indexOf(it); if(i<0)return '';
+  return '<div class="pg-ctl">'
+    +'<button type="button" onclick="pgQty('+i+',-1)">&minus;</button>'
+    +'<input type="number" min="1" value="'+it.qty+'" onchange="pgQtySet('+i+',this.value)" title="Qty">'
+    +'<button type="button" onclick="pgQty('+i+',1)">+</button>'
+    +'<span>diskon</span><input type="number" min="0" max="100" step="0.5" value="'+(itemDiscPct(it)||'')+'" placeholder="0" onchange="pgDisc('+i+',this.value)" title="Diskon %"><span>%</span>'
+    +'<button type="button" onclick="pgMove('+i+',-1)" title="Naik">&uarr;</button>'
+    +'<button type="button" onclick="pgMove('+i+',1)" title="Turun">&darr;</button>'
+    +'<button type="button" onclick="pgDel('+i+')" title="Hapus">&#128465;</button>'
+  +'</div>';
+}
+function pgOpenAdd(sec){
+  pgAddSection=sec||'';
+  document.getElementById('pg-add-sec').textContent='ke bagian: '+(pgAddSection||'(Umum)');
+  document.getElementById('pg-add').style.display='block';
+  pgTab(pgAddTab);pgSearch();
+  setTimeout(function(){var q=document.getElementById('pg-q');if(q)q.focus();},30);
+}
+function pgCloseAdd(){document.getElementById('pg-add').style.display='none';pgAddSection=null;}
+function pgTab(t){
+  pgAddTab=t;
+  document.getElementById('pg-cat').style.display=t==='cat'?'block':'none';
+  document.getElementById('pg-cus').style.display=t==='cus'?'block':'none';
+  document.getElementById('pg-tab-cat').classList.toggle('on',t==='cat');
+  document.getElementById('pg-tab-cus').classList.toggle('on',t==='cus');
+}
+function pgPriceLabel(p){return (p.series&&p.series.indexOf('SM-')===0)?('IDR '+(p.idrDirect||0).toLocaleString('id-ID')):('€'+(p.price||0).toLocaleString());}
+function pgSearch(){
+  var q=(document.getElementById('pg-q').value||'').toLowerCase().trim();
+  var toks=q.split(/\s+/).filter(Boolean);
+  var out=[];
+  for(var k=0;k<PRODUCTS.length&&out.length<40;k++){
+    var p=PRODUCTS[k], hay=(p.code+' '+(p.series||'')+' '+(p.desc||'')).toLowerCase();
+    if(toks.every(function(t){return hay.indexOf(t)!==-1;}))out.push(k);
+  }
+  if(toks.length)out.sort(function(a,b){var ca=PRODUCTS[a].code.toLowerCase(),cb=PRODUCTS[b].code.toLowerCase();return (cb.indexOf(toks[0])===0)-(ca.indexOf(toks[0])===0);});
+  document.getElementById('pg-results').innerHTML=out.length?out.map(function(k){
+    var p=PRODUCTS[k];
+    return '<div class="pg-res" onclick="pgAdd('+k+')"><span class="p">'+pgPriceLabel(p)+'</span><b>'+escapeHtml(p.code)+'</b> <span class="d">'+escapeHtml(p.series||'')+'</span><div class="d">'+escapeHtml((p.desc||'').substring(0,90))+'</div></div>';
+  }).join(''):'<div class="pg-res"><span class="d">Tidak ada yang cocok.</span></div>';
+}
+function pgEnsureSection(){
+  var sec=pgAddSection||'';
+  if(sec&&sectionList.indexOf(sec)===-1)sectionList.push(sec);
+  currentSection=sec;
+}
+function pgAdd(k,qtyOverride){
+  var p=PRODUCTS[k]; if(!p)return;
+  var qty=qtyOverride||Math.max(1,parseInt(document.getElementById('pg-qty').value,10)||1);
+  var disc=Math.max(0,Math.min(100,parseFloat(document.getElementById('pg-disc').value)||0));
+  pgEnsureSection();
+  addProductToItems(p,qty,{fxOn:true,fxRate:globalFxRate,fxCurrency:'EUR',itemDisc:disc});
+  pgAddLog.unshift('✓ '+p.code+' ×'+qty+(disc?(' (diskon '+disc+'%)'):''));
+  document.getElementById('pg-log').innerHTML=pgAddLog.slice(0,6).map(escapeHtml).join('<br>');
+  pgRefresh();
+  ensurePairingData(function(){
+    var sug=suggestPairingsFor(p.code), box=document.getElementById('pg-pair');
+    box.innerHTML=sug.length?('Sering bersama '+escapeHtml(p.code)+': '+sug.map(function(s){
+      var idx=PRODUCTS.findIndex(function(x){return x.code===s.code;});
+      return idx<0?'':'<button type="button" onclick="pgAdd('+idx+',1)">+ '+escapeHtml(s.code)+'</button>';
+    }).join('')):'';
+  });
+}
+function pgAddCustom(){
+  var code=document.getElementById('pg-c-code').value.trim(), desc=document.getElementById('pg-c-desc').value.trim();
+  var price=parseFloat(document.getElementById('pg-c-price').value), qty=Math.max(1,parseInt(document.getElementById('pg-c-qty').value,10)||1);
+  if(!code){alert('Isi nama item dulu.');return;}
+  if(!price||isNaN(price)){alert('Isi harga (boleh minus untuk potongan).');return;}
+  pgEnsureSection();
+  items.push({code:code,displayName:code,series:'Custom',desc:desc||code,catalogPrice:price,eurPrice:null,idrPrice:null,idrDirect:null,qty:qty,specs:'',custom:true,section:currentSection,includesPPN:false,fxOn:false,fxRate:0,fxCurrency:'',itemDisc:0,twMarkupOn:false,docImgSize:'lg',docDescSize:'md'});
+  ['pg-c-code','pg-c-desc','pg-c-price'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('pg-c-qty').value='1';
+  pgRefresh();
+}
+function pgNewSection(){
+  var name=prompt('Nama bagian/ruangan baru (misal: Line Array System, Mixer System):','');
+  if(name===null)return; name=name.trim();
+  if(!name){alert('Nama tidak boleh kosong.');return;}
+  if(sectionList.indexOf(name)===-1)sectionList.push(name);
+  pgOpenAdd(name);
+}
+
 function buildDoc(){
   var wrap=document.getElementById('doc-wrap');
   if(!items.length){
-    wrap.innerHTML='<div class="empty-state" style="padding:60px 20px;background:#fff">Add items in the Builder tab first.</div>';
+    wrap.innerHTML='<div class="empty-state" style="padding:60px 20px;background:#fff">'+(pagesMode?'Belum ada produk.<br><br><button type="button" class="pg-addbtn" style="max-width:320px" data-sec="" onclick="pgOpenAdd(this.dataset.sec)">&#65291; Tambah produk pertama</button>':'Add items in the Builder tab first.')+'</div>';
     return;
   }
 
@@ -4739,7 +4879,7 @@ function buildDoc(){
           +'<div class="produk-series">'+it.series+'</div>'
         +'</td>'
         +'<td style="width:'+gambarPct+'%;text-align:center">'+imgCell+'</td>'
-        +'<td style="width:'+deskPct+'%"><div style="'+descStyle+'">'+edw('i:'+itemUid(it)+':d',descHtml+spec,'div')+'</div></td>'
+        +'<td style="width:'+deskPct+'%"><div style="'+descStyle+'">'+edw('i:'+itemUid(it)+':d',descHtml+spec,'div')+'</div>'+(pagesMode?pgRowCtl(it):'')+'</td>'
         +'<td style="width:6%;text-align:center;font-size:10px">'+it.qty+'</td>'
         +'<td style="width:13%;text-align:right;font-size:10px">'+fmt(uShow)+'</td>'
         +'<td style="width:13%;text-align:right;font-weight:700;font-size:10px">'+fmt(totalShow)+'</td>'
@@ -4874,7 +5014,7 @@ function buildDoc(){
     var PAGE_MAX=930; // px of content per printed A4 page, leaving room for the footer
     function pageHtml(chunk,withFirst,withTail){
       return pageHdr()+(withFirst?firstExtra:'')+secHeadHtml+tblHead
-        +buildRowsHtml(chunk,gambarPct)+'</tbody></table>'+(withTail?subtotalsHtml:'');
+        +buildRowsHtml(chunk,gambarPct)+'</tbody></table>'+((withTail&&pagesMode)?'<div class="pg-addbar"><button type="button" class="pg-addbtn" data-sec="'+escapeHtml(g.name||'')+'" onclick="pgOpenAdd(this.dataset.sec)">&#65291; Tambah produk ke bagian ini</button></div>':'')+(withTail?subtotalsHtml:'');
     }
     function fits(chunk,withFirst,withTail){
       probe.innerHTML=pageHtml(chunk,withFirst,withTail);
