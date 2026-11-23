@@ -2785,9 +2785,9 @@ function buildRtfString(){
     var subtotal=0;
     g.items.forEach(function(it){
       var uShow=unitShowOf(it);
-      var totalShow=uShow*it.qty;
+      var totalShow=lineShowOf(it);
       subtotal+=totalShow;
-      var name=escapeRtf(edPlain('i:'+itemUid(it)+':n',it.displayName||it.code),'\\line ')+(it.series?('\\line '+escapeRtf(it.series,'\\line ')):'');
+      var name=escapeRtf(edPlain('i:'+itemUid(it)+':n',it.displayName||it.code),'\\line ')+((it.series&&!it.custom)?('\\line '+escapeRtf(it.series,'\\line ')):'');
       var descText=edPlain('i:'+itemUid(it)+':d',(it.desc||'')+(it.specs?('\n'+it.specs):''));
       var desc=escapeRtf(descText,'\\line ');
       out+=row([name,desc,String(it.qty),fmt(uShow),fmt(totalShow)],false,['','','\\qc ','\\qr ','\\qr ']);
@@ -2796,7 +2796,6 @@ function buildRtfString(){
     if(gi===sectionGroups.length-1){
       if(docLinePpn){
         var rnd=linePpnRounding();
-        if(rnd!==0)out+='\\qr Pembulatan: '+fmt(rnd)+'\\par\n';
         out+='\\qr\\b\\fs26 Harga Total: '+fmt(grand)+'\\b0\\fs22\\par\n';
       } else if(docShowPpn){
         out+='\\qr Harga Total: '+fmt(tots.subtotal)+'\\par\n';
@@ -2907,7 +2906,7 @@ async function exportToExcel(){
       var subtotal=0;
       g.items.forEach(function(it){
         var uShow=unitShowOf(it);
-        var totalShow=uShow*it.qty;
+        var totalShow=lineShowOf(it);
         subtotal+=totalShow;
         addRow([
           edPlain('i:'+itemUid(it)+':n',it.displayName||it.code),
@@ -2926,7 +2925,6 @@ async function exportToExcel(){
     var tots=calcTotals();
     if(docLinePpn){
       var rndX=linePpnRounding();
-      if(rndX!==0)addRow(['','','','','','Pembulatan',rndX],{moneyCols:[7]});
       addRow(['','','','','','Harga Total',tots.grand],{bold:true,moneyCols:[7]});
     } else if(docShowPpn){
       addRow(['','','','','','Harga Total',tots.subtotal],{moneyCols:[7]});
@@ -4497,15 +4495,43 @@ function setDocLinePpn(v){
   scheduleDraftSave();
   if(document.getElementById('pane-preview').classList.contains('active'))buildDoc();
 }
+// In "harga per produk sudah + PPN" mode every line is rounded to whole rupiah,
+// which can leave the lines a few rupiah off the grand total. Instead of showing a
+// "Pembulatan" line, the difference is folded invisibly into ONE line (the largest
+// one, preferring a line where it divides evenly across qty so unit x qty still
+// matches). The grand total itself is never touched.
+var _adjMemo={key:'',map:{}};
+function linePpnAdj(){
+  if(!docLinePpn)return {};
+  var key=items.map(function(it){return itemUid(it)+':'+unitFinal(it)+':'+it.qty;}).join(',');
+  if(_adjMemo.key===key)return _adjMemo.map;
+  var sum=0;
+  items.forEach(function(it){sum+=Math.round(unitFinal(it)*1.11)*it.qty;});
+  var diff=calcTotals().grand-sum, map={};
+  if(diff){
+    var best=null,even=null;
+    items.forEach(function(it){
+      var v=Math.abs(Math.round(unitFinal(it)*1.11)*it.qty);
+      if(!best||v>best.v)best={it:it,v:v};
+      if(diff%it.qty===0&&(!even||v>even.v))even={it:it,v:v};
+    });
+    if(even)map[itemUid(even.it)]={u:diff/even.it.qty,l:0};
+    else if(best)map[itemUid(best.it)]={u:0,l:diff};
+  }
+  _adjMemo={key:key,map:map};
+  return map;
+}
 function unitShowOf(it){
   var u=unitFinal(it);
-  return docLinePpn?Math.round(u*1.11):u;
+  if(!docLinePpn)return u;
+  var a=linePpnAdj()[itemUid(it)];
+  return Math.round(u*1.11)+(a?a.u:0);
 }
-function linePpnRounding(){
-  if(!docLinePpn)return 0;
-  var sum=items.reduce(function(s,it){return s+unitShowOf(it)*it.qty;},0);
-  return calcTotals().grand-sum;
+function lineShowOf(it){
+  var a=docLinePpn?linePpnAdj()[itemUid(it)]:null;
+  return unitShowOf(it)*it.qty+(a?a.l:0);
 }
+function linePpnRounding(){return 0;} // kept for compatibility: lines now always add up to the grand total
 const DOC_IMG_SIZES={
   sm:{colPct:6, imgW:34, imgH:26, label:'Kecil'},
   md:{colPct:8, imgW:52, imgH:40, label:'Sedang'},
@@ -4580,7 +4606,7 @@ function buildInternalSheetHtml(){
     var head=g.name?'<tr class="sec"><td colspan="3">'+esc(g.name)+'</td></tr>':'';
     var rows=g.items.map(function(it){
       var l=listShow(it), u=unitShowOf(it), pct=itemDiscPct(it);
-      var line=u*it.qty;
+      var line=lineShowOf(it);
       secSum+=line; sumLines+=line;
       if(!it.custom){listCat+=l*it.qty;finalCat+=line;}
       var flag='';
@@ -4610,8 +4636,7 @@ function buildInternalSheetHtml(){
   // Totals block mirrors the client document exactly, in whichever mode is on.
   var clientTot;
   if(docLinePpn){
-    clientTot=(rnd!==0?'<div class="row"><span>Pembulatan</span><span>'+fmt(rnd)+'</span></div>':'')
-      +'<div class="grand"><span>Harga Total</span><span id="i-grand">'+fmt(grand)+'</span></div>';
+    clientTot='<div class="grand"><span>Harga Total</span><span id="i-grand">'+fmt(grand)+'</span></div>';
   } else if(docShowPpn){
     clientTot='<div class="row"><span>Harga Total</span><span>'+fmt(tots.subtotal)+'</span></div>'
       +'<div class="row"><span>PPN 11%</span><span>'+fmt(tots.ppn)+'</span></div>'
@@ -5182,7 +5207,7 @@ function buildDoc(){
   function buildRowsHtml(arr,gambarPct){
     return arr.map(function(it){
       var uShow=unitShowOf(it);
-      var totalShow=uShow*it.qty;
+      var totalShow=lineShowOf(it);
       var spec=it.specs?'<div class="spec-block">'+escapeHtml(it.specs)+'</div>':'';
       var descHtml=escapeHtml(it.desc||'').replace(/\n/g,'<br>');
       var imgSrc2=productImageSrc(it.code);
@@ -5198,7 +5223,7 @@ function buildDoc(){
         +'<td style="width:14%">'
           +(pagesMode?'<div class="pg-gut"><span class="pg-drag" draggable="true" title="Tarik untuk memindahkan">&#8942;&#8942;</span><button type="button" class="pg-plus" onclick="pgOpenAddAfter(this.closest(\'.pg-row\').dataset.uid)" title="Tambah produk di bawah ini">+</button></div>':'')
           +'<div class="produk-name">'+edw('i:'+itemUid(it)+':n',(it.displayName||it.code))+'</div>'
-          +'<div class="produk-series">'+it.series+'</div>'
+          +(it.custom?'':'<div class="produk-series">'+it.series+'</div>')
         +'</td>'
         +'<td style="width:'+gambarPct+'%;text-align:center">'+imgCell+'</td>'
         +'<td style="width:'+deskPct+'%"><div style="'+descStyle+'">'+edw('i:'+itemUid(it)+':d',descHtml+spec,'div')+'</div>'+(pagesMode?pgRowCtl(it):'')+'</td>'
@@ -5217,8 +5242,7 @@ function buildDoc(){
   var totalsHtml='<div class="doc-totals-wrap">'
     +'<div class="doc-tot-inner">'
       +(docLinePpn
-        ? (linePpnRounding()!==0?'<div class="doc-tot-row"><span class="lbl">Pembulatan</span><span class="amt">'+fmt(linePpnRounding())+'</span></div>':'')
-          +'<div class="doc-tot-grand"><span class="lbl">Harga Total</span><span class="amt">'+fmt(grand)+'</span></div>'
+        ? '<div class="doc-tot-grand"><span class="lbl">Harga Total</span><span class="amt">'+fmt(grand)+'</span></div>'
         : docShowPpn
         ? '<div class="doc-tot-row"><span class="lbl">Harga Total</span><span class="amt">'+fmt(tots.subtotal)+'</span></div>'
           +'<div class="doc-tot-row"><span class="lbl">PPN 11%</span><span class="amt">'+fmt(tots.ppn)+'</span></div>'
@@ -5307,7 +5331,7 @@ function buildDoc(){
     var titleSuffix = g.name ? (' &mdash; '+escapeHtml(g.name)) : '';
     var gambarPct = DOC_IMG_SIZES[sectionMaxImgSizeKey(g.items)].colPct;
     var rowsHtml = buildRowsHtml(g.items,gambarPct);
-    var subtotal = g.items.reduce(function(s,it){return s+unitShowOf(it)*it.qty;},0); // follows the PPN-inclusive display mode
+    var subtotal = g.items.reduce(function(s,it){return s+lineShowOf(it);},0); // follows the PPN-inclusive display mode
     var subtotalLineHtml = '<div class="doc-tot-sub"><span class="lbl">Subtotal'+(g.name?' &mdash; '+escapeHtml(g.name):'')+'</span><span class="amt">'+fmt(Math.round(subtotal))+'</span></div>';
     // Last page shows its own subtotal AND the grand total together, so
     // the recap reads top-to-bottom instead of only showing the final sum.
