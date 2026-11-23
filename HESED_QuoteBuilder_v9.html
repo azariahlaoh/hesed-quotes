@@ -339,6 +339,16 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 /* ── CUSTOM CONTENT BLOCK PAGE ───────────────────────────────── */
 .block-page-img{width:100%;max-height:200mm;object-fit:contain;display:block;margin:0 auto}
 .block-page-caption{font-size:9.5px;color:#888;text-align:center;margin-top:4mm;font-style:italic}
+.pg-toolbar{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:#fff8dc;border:1px solid #e6cf7a;border-radius:8px;padding:6px 10px;margin:8px auto;max-width:794px;font-size:12px}
+.pg-toolbar button{border:1px solid #cdb55a;background:#fff;border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer}
+.pg-toolbar .pg-hint{flex:1 1 100%;color:#6b5a1b}
+@media screen{
+  .pg-mode .pg-ed{outline:none;border-radius:2px;cursor:text;transition:background .15s}
+  .pg-mode .pg-ed:hover{background:rgba(255,226,120,.28)}
+  .pg-mode .pg-ed:focus{background:rgba(255,226,120,.4);box-shadow:0 0 0 1px #c9a227}
+  .pg-mode .pg-ed:empty:before{content:'Ketik di sini\2026';color:#b9b9b9}
+  .pg-mode .block-page-text{min-height:80px}
+}
 .block-page-text{font-size:10.5px;color:#222;line-height:1.8;white-space:pre-line}
 .tnc-sec{display:grid;grid-template-columns:38mm 1fr;gap:0 7mm;margin-bottom:3.5mm;padding-bottom:3.5mm;border-bottom:1px solid #f0f0f0;page-break-inside:avoid}
 .tnc-sec:last-of-type{border-bottom:none}
@@ -1110,6 +1120,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
     <button class="btn btn-dark" onclick="printAsRef()">&#128424; Print / Save as PDF</button>
     <button class="btn btn-outline" onclick="exportToWord()">&#128190; Export to Word (.rtf, editable)</button>
     <button class="btn btn-outline" onclick="exportToExcel()">&#128202; Export to Excel</button>
+    <button class="btn btn-outline" id="pg-toggle" onclick="togglePagesMode()" title="Edit teks langsung di halaman, seperti Pages. Harga dan total terkunci.">&#9998;&#65039; Mode Pages</button>
     <button class="btn btn-outline" onclick="openInternalSheet()" title="Lembar rincian harga &amp; diskon untuk Dave, bukan untuk klien">&#128274; Lembar Internal (PDF)</button>
     <button class="btn btn-outline" onclick="saveQuoteToHistory()">&#9729; Save to history</button>
   </div>
@@ -1130,7 +1141,18 @@ td:nth-child(4),th:nth-child(4){text-align:center}
     </label>
     <span class="print-tip">Print dialog &rarr; destination "Save as PDF" &middot; set margins to Minimum or None</span>
   </div>
-  <div class="doc-wrap" id="doc-wrap">
+  <div id="pg-toolbar" class="pg-toolbar" style="display:none">
+  <span class="pg-hint">Klik teks di halaman untuk mengedit. Harga, qty, dan total terkunci.</span>
+  <button type="button" onmousedown="event.preventDefault()" onclick="pgCmd('bold')" title="Tebal"><b>B</b></button>
+  <button type="button" onmousedown="event.preventDefault()" onclick="pgCmd('italic')" title="Miring"><i>I</i></button>
+  <button type="button" onmousedown="event.preventDefault()" onclick="pgCmd('underline')" title="Garis bawah"><u>U</u></button>
+  <button type="button" onmousedown="event.preventDefault()" onclick="pgSize(-1)" title="Perkecil huruf">A&minus;</button>
+  <button type="button" onmousedown="event.preventDefault()" onclick="pgSize(1)" title="Perbesar huruf">A+</button>
+  <button type="button" onmousedown="event.preventDefault()" onclick="pgResetOne()" title="Kembalikan teks yang sedang dipilih ke aslinya">&#8634; Teks asli</button>
+  <button type="button" onmousedown="event.preventDefault()" onclick="pgNewPage()">&#65291; Halaman baru</button>
+  <button type="button" onmousedown="event.preventDefault()" onclick="pgClearAll()">Hapus semua edit</button>
+</div>
+<div class="doc-wrap" id="doc-wrap">
     <div class="empty-state" style="padding:60px 20px;background:#fff;border-radius:4px">Add items in the Builder tab first.</div>
   </div>
 </div>
@@ -2139,6 +2161,7 @@ function saveDraftNow(){
       payment_terms_custom:paymentTermsCustom,
       show_ppn:docShowPpn,
       line_ppn:docLinePpn,
+      doc_edits:docEdits,
       saved_at:new Date().toISOString()
     };
     localStorage.setItem(DRAFT_KEY,JSON.stringify(draft));
@@ -2176,6 +2199,7 @@ function restoreDraft(){
   applyPaymentTermsState(d.payment_terms||'5050',d.payment_terms_custom||'');
   setDocShowPpn(d.show_ppn!==false);
   setDocLinePpn(d.line_ppn===true);
+  docEdits=d.doc_edits||{};
   updateRef();
   refreshSectionSelect();
   renderAll();
@@ -2660,8 +2684,8 @@ function buildRtfString(){
       var uShow=unitShowOf(it);
       var totalShow=uShow*it.qty;
       subtotal+=totalShow;
-      var name=escapeRtf(it.displayName||it.code,'\\line ')+(it.series?('\\line '+escapeRtf(it.series,'\\line ')):'');
-      var descText=(it.desc||'')+(it.specs?('\n'+it.specs):'');
+      var name=escapeRtf(edPlain('i:'+itemUid(it)+':n',it.displayName||it.code),'\\line ')+(it.series?('\\line '+escapeRtf(it.series,'\\line ')):'');
+      var descText=edPlain('i:'+itemUid(it)+':d',(it.desc||'')+(it.specs?('\n'+it.specs):''));
       var desc=escapeRtf(descText,'\\line ');
       out+=row([name,desc,String(it.qty),fmt(uShow),fmt(totalShow)],false,['','','\\qc ','\\qr ','\\qr ']);
     });
@@ -2781,9 +2805,9 @@ async function exportToExcel(){
         var totalShow=uShow*it.qty;
         subtotal+=totalShow;
         addRow([
-          it.displayName||it.code,
-          it.desc||'',
-          it.specs||'',
+          edPlain('i:'+itemUid(it)+':n',it.displayName||it.code),
+          edPlain('i:'+itemUid(it)+':d',it.desc||''),
+          docEdits['i:'+itemUid(it)+':d']!=null?'':(it.specs||''),
           it.qty,
           uShow,
           parseFloat(it.itemDisc)||0,
@@ -4536,6 +4560,103 @@ function openInternalSheet(){
   setTimeout(function(){try{w.print();}catch(e){}},600);
 }
 
+/* ---- Mode Pages: edit the document text in place (prices/qty/totals stay locked) ---- */
+var docEdits={};      // key -> sanitized html override (document only; catalog untouched)
+var pagesMode=false;
+var pgLastKey=null, pgReflowT=null;
+function edv(key,def){return docEdits[key]!=null?docEdits[key]:def;}
+function edw(key,def,tag){
+  var v=edv(key,def);
+  if(!pagesMode)return v;
+  tag=tag||'span';
+  return '<'+tag+' class="pg-ed" contenteditable="true" spellcheck="false" data-ek="'+escapeHtml(key)+'">'+v+'</'+tag+'>';
+}
+function edPlain(key,def){
+  if(docEdits[key]==null)return def;
+  var d=document.createElement('div');
+  d.innerHTML=docEdits[key].replace(/<br\s*\/?>/gi,'\n');
+  return d.textContent;
+}
+function itemUid(it){
+  if(!it._uid)it._uid='u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  return it._uid;
+}
+function sanitizeEdit(html){
+  var src=document.createElement('div'); src.innerHTML=html;
+  function walk(node){
+    var out='';
+    node.childNodes.forEach(function(n){
+      if(n.nodeType===3){out+=escapeHtml(n.nodeValue);return;}
+      if(n.nodeType!==1)return;
+      var t=n.tagName.toLowerCase(), inner=walk(n);
+      if(t==='br'){out+='<br>';}
+      else if(t==='b'||t==='strong'){out+='<b>'+inner+'</b>';}
+      else if(t==='i'||t==='em'){out+='<i>'+inner+'</i>';}
+      else if(t==='u'){out+='<u>'+inner+'</u>';}
+      else if(t==='font'){var sz=parseInt(n.getAttribute('size'),10);out+=(sz>=1&&sz<=7)?'<font size="'+sz+'">'+inner+'</font>':inner;}
+      else if(t==='div'||t==='p'||t==='li'){out+=(out&&!/<br>$/.test(out)?'<br>':'')+inner;}
+      else if(t==='span'){
+        var st=n.getAttribute('style')||'', r=inner;
+        if(/underline/.test(st))r='<u>'+r+'</u>';
+        if(/font-style:\s*italic/.test(st))r='<i>'+r+'</i>';
+        if(/font-weight:\s*(bold|[6-9]00)/.test(st))r='<b>'+r+'</b>';
+        out+=r;
+      } else out+=inner;
+    });
+    return out;
+  }
+  return walk(src).replace(/(<br>)+$/,'');
+}
+function pgReflow(){var y=window.scrollY;buildDoc();window.scrollTo(0,y);}
+function applyPagesUi(){
+  var b=document.getElementById('pg-toggle');
+  if(b){b.classList.toggle('btn-dark',pagesMode);b.classList.toggle('btn-outline',!pagesMode);b.innerHTML=pagesMode?'&#9998;&#65039; Mode Pages: ON':'&#9998;&#65039; Mode Pages';}
+  var tb=document.getElementById('pg-toolbar'); if(tb)tb.style.display=pagesMode?'flex':'none';
+  var w=document.getElementById('doc-wrap'); if(w)w.classList.toggle('pg-mode',pagesMode);
+}
+function togglePagesMode(){pagesMode=!pagesMode;applyPagesUi();buildDoc();}
+function pgCmd(c){document.execCommand(c,false,null);}
+function pgSize(d){
+  var cur=parseInt(document.queryCommandValue('fontSize'),10)||3;
+  document.execCommand('fontSize',false,String(Math.max(1,Math.min(7,cur+d))));
+}
+function pgResetOne(){
+  if(!pgLastKey||docEdits[pgLastKey]==null){alert('Klik dulu teks yang mau dikembalikan.');return;}
+  delete docEdits[pgLastKey];scheduleDraftSave();pgReflow();
+}
+function pgClearAll(){
+  if(!Object.keys(docEdits).length){return;}
+  if(!confirm('Hapus semua edit teks di dokumen ini dan kembali ke teks asli?'))return;
+  docEdits={};scheduleDraftSave();pgReflow();
+}
+function pgNewPage(){
+  customBlocks.push({id:genBlockId(),type:'text',title:'Halaman baru',text:'Klik di sini lalu ketik.',afterKey:'__end__'});
+  renderBlocksList();scheduleDraftSave();buildDoc();
+  setTimeout(function(){var els=document.querySelectorAll('.block-page-text .pg-ed');if(els.length){els[els.length-1].scrollIntoView({block:'center'});}},50);
+}
+document.addEventListener('input',function(e){
+  var el=e.target.closest&&e.target.closest('.pg-ed'); if(!el)return;
+  docEdits[el.dataset.ek]=sanitizeEdit(el.innerHTML); scheduleDraftSave();
+});
+document.addEventListener('focusin',function(e){
+  var el=e.target.closest&&e.target.closest('.pg-ed'); if(el)pgLastKey=el.dataset.ek;
+});
+document.addEventListener('paste',function(e){
+  var el=e.target.closest&&e.target.closest('.pg-ed'); if(!el)return;
+  e.preventDefault();
+  var t=(e.clipboardData||window.clipboardData).getData('text/plain');
+  document.execCommand('insertText',false,t);
+});
+document.addEventListener('focusout',function(e){
+  var el=e.target.closest&&e.target.closest('.pg-ed'); if(!el)return;
+  clearTimeout(pgReflowT);
+  pgReflowT=setTimeout(function(){
+    var a=document.activeElement;
+    if(a&&a.closest&&(a.closest('.pg-ed')||a.closest('#pg-toolbar')))return;
+    pgReflow();
+  },450);
+});
+
 function buildDoc(){
   var wrap=document.getElementById('doc-wrap');
   if(!items.length){
@@ -4577,9 +4698,9 @@ function buildDoc(){
   var metaHtml='<div class="qt-meta">'
     +metaGroup('No. Quotation','<strong>'+ref+'</strong>')
     +metaGroup('Tanggal',date)
-    +((contact||client)?metaGroup('Kepada Yth.',contact+(client?'<br>'+client:'')):'')
-    +(address?metaGroup('Alamat',address):'')
-    +(project?metaGroup('Proyek',project):'')
+    +((contact||client)?metaGroup('Kepada Yth.',edw('m:to',contact+(client?'<br>'+client:''),'div')):'')
+    +(address?metaGroup('Alamat',edw('m:addr',address,'div')):'')
+    +(project?metaGroup('Proyek',edw('m:proj',project,'div')):'')
   +'</div>';
 
   // ── Product rows (per section) ──────────────────────────────────
@@ -4614,11 +4735,11 @@ function buildDoc(){
       var deskPct=46-(gambarPct-8); // keep the row's columns summing to 100%
       return '<tr>'
         +'<td style="width:14%">'
-          +'<div class="produk-name">'+(it.displayName||it.code)+'</div>'
+          +'<div class="produk-name">'+edw('i:'+itemUid(it)+':n',(it.displayName||it.code))+'</div>'
           +'<div class="produk-series">'+it.series+'</div>'
         +'</td>'
         +'<td style="width:'+gambarPct+'%;text-align:center">'+imgCell+'</td>'
-        +'<td style="width:'+deskPct+'%"><div style="'+descStyle+'">'+descHtml+spec+'</div></td>'
+        +'<td style="width:'+deskPct+'%"><div style="'+descStyle+'">'+edw('i:'+itemUid(it)+':d',descHtml+spec,'div')+'</div></td>'
         +'<td style="width:6%;text-align:center;font-size:10px">'+it.qty+'</td>'
         +'<td style="width:13%;text-align:right;font-size:10px">'+fmt(uShow)+'</td>'
         +'<td style="width:13%;text-align:right;font-weight:700;font-size:10px">'+fmt(totalShow)+'</td>'
@@ -4647,29 +4768,29 @@ function buildDoc(){
 
   // ── T&C ───────────────────────────────────────────────────────
   var tncHtml=''
-    +'<div class="tnc-page-title">Syarat dan Ketentuan</div>'
-    +'<div class="tnc-sec"><div class="tnc-sec-hd">I. Harga &amp; Pembayaran</div><ol>'
-      +'<li>Harga atas barang-barang yang tertulis dalam Quotation yang dikeluarkan oleh PT Hesed Kharis Indonesia kepada Pihak Pembeli adalah mengikat dan berlaku selama 14 (empat belas) hari terhitung dari tanggal Quotation.</li>'
-      +'<li>'+escapeHtml(paymentTermsClause())+'</li>'
-      +'<li>Harga barang adalah merupakan harga yang berlaku di dalam daerah pengiriman terbatas di wilayah DKI Jakarta, Bogor, Tangerang dan Bekasi.</li>'
+    +'<div class="tnc-page-title">'+edw('t:title','Syarat dan Ketentuan')+'</div>'
+    +'<div class="tnc-sec"><div class="tnc-sec-hd">'+edw('t:h1','I. Harga &amp; Pembayaran')+'</div><ol>'
+      +'<li>'+edw('t:l1','Harga atas barang-barang yang tertulis dalam Quotation yang dikeluarkan oleh PT Hesed Kharis Indonesia kepada Pihak Pembeli adalah mengikat dan berlaku selama 14 (empat belas) hari terhitung dari tanggal Quotation.')+'</li>'
+      +'<li>'+edw('t:pay',escapeHtml(paymentTermsClause()))+'</li>'
+      +'<li>'+edw('t:l2','Harga barang adalah merupakan harga yang berlaku di dalam daerah pengiriman terbatas di wilayah DKI Jakarta, Bogor, Tangerang dan Bekasi.')+'</li>'
     +'</ol></div>'
-    +'<div class="tnc-sec"><div class="tnc-sec-hd">II. Serah Terima Barang</div><ol>'
-      +'<li>PT Hesed Kharis Indonesia menyanggupi untuk melakukan serah terima barang kepada Pihak Pembeli selambat-lambatnya 60 (enam puluh) hari setelah menerima uang muka.</li>'
+    +'<div class="tnc-sec"><div class="tnc-sec-hd">'+edw('t:h2','II. Serah Terima Barang')+'</div><ol>'
+      +'<li>'+edw('t:l3','PT Hesed Kharis Indonesia menyanggupi untuk melakukan serah terima barang kepada Pihak Pembeli selambat-lambatnya 60 (enam puluh) hari setelah menerima uang muka.')+'</li>'
     +'</ol></div>'
-    +'<div class="tnc-sec"><div class="tnc-sec-hd">III. Garansi</div><ol>'
-      +'<li>1 (satu) tahun sesuai standar ketentuan pabrik, terbatas untuk komponen, jika terjadi kegagalan fungsi komponen yang bukan merupakan kesalahan pemakaian dari pihak pembeli.</li>'
-      +'<li>Kesalahan pemakaian yang dimaksud di atas (III.1) adalah asupan listrik yang tidak wajar, sengatan listrik arus pendek, benturan fisik, dimasuki debu yang sangat banyak, terendam air, terkontaminasi air garam dan atau unsur kimia yang merusak, berada di lingkungan dengan suhu di atas 50&#730;C dan kejadian lainnya yang bersifat kelalaian pemakaian dan atau kegagalan pemeliharaan.</li>'
-      +'<li>PT Hesed Kharis Indonesia menjamin dukungan servis, berupa perbaikan kerusakan selama 2 (dua) tahun sejak barang-barang tersebut diserahterimakan.</li>'
-      +'<li>Lokasi perbaikan/servis yang dijaminkan adalah di Jakarta, Indonesia. Jika perbaikan/servis terjadi di luar kota Jakarta, maka segala biaya yang diakibatkan menjadi tanggungan pembeli.</li>'
+    +'<div class="tnc-sec"><div class="tnc-sec-hd">'+edw('t:h3','III. Garansi')+'</div><ol>'
+      +'<li>'+edw('t:l4','1 (satu) tahun sesuai standar ketentuan pabrik, terbatas untuk komponen, jika terjadi kegagalan fungsi komponen yang bukan merupakan kesalahan pemakaian dari pihak pembeli.')+'</li>'
+      +'<li>'+edw('t:l5','Kesalahan pemakaian yang dimaksud di atas (III.1) adalah asupan listrik yang tidak wajar, sengatan listrik arus pendek, benturan fisik, dimasuki debu yang sangat banyak, terendam air, terkontaminasi air garam dan atau unsur kimia yang merusak, berada di lingkungan dengan suhu di atas 50&#730;C dan kejadian lainnya yang bersifat kelalaian pemakaian dan atau kegagalan pemeliharaan.')+'</li>'
+      +'<li>'+edw('t:l6','PT Hesed Kharis Indonesia menjamin dukungan servis, berupa perbaikan kerusakan selama 2 (dua) tahun sejak barang-barang tersebut diserahterimakan.')+'</li>'
+      +'<li>'+edw('t:l7','Lokasi perbaikan/servis yang dijaminkan adalah di Jakarta, Indonesia. Jika perbaikan/servis terjadi di luar kota Jakarta, maka segala biaya yang diakibatkan menjadi tanggungan pembeli.')+'</li>'
     +'</ol></div>'
-    +'<div class="tnc-sec"><div class="tnc-sec-hd">IV. Pembatalan &amp; Pengembalian</div><ol>'
-      +'<li>Setiap pembatalan yang terjadi oleh Pembeli dengan alasan apapun juga akan mengakibatkan uang deposit hangus atau tidak dapat dikembalikan kepada Pembeli.</li>'
+    +'<div class="tnc-sec"><div class="tnc-sec-hd">'+edw('t:h4','IV. Pembatalan &amp; Pengembalian')+'</div><ol>'
+      +'<li>'+edw('t:l8','Setiap pembatalan yang terjadi oleh Pembeli dengan alasan apapun juga akan mengakibatkan uang deposit hangus atau tidak dapat dikembalikan kepada Pembeli.')+'</li>'
     +'</ol></div>'
     +'<div class="doc-sig">'
-      +'<div class="doc-sig-date">Jakarta, '+date+'</div>'
+      +'<div class="doc-sig-date">'+edw('sg:d','Jakarta, '+date)+'</div>'
       +'<div class="doc-sig-space"></div>'
-      +'<div class="doc-sig-name">Dene Dave Laoh</div>'
-      +'<div class="doc-sig-co">Direktur Utama PT HESED Kharis Indonesia</div>'
+      +'<div class="doc-sig-name">'+edw('sg:n','Dene Dave Laoh')+'</div>'
+      +'<div class="doc-sig-co">'+edw('sg:c','Direktur Utama PT HESED Kharis Indonesia')+'</div>'
     +'</div>';
 
   // ── PAGE 1 (COVER): client + project headline ─────────────────
@@ -4678,9 +4799,9 @@ function buildDoc(){
   var page0='<div class="doc-page cover-page">'
     +'<div class="cover-top"><img src="'+LOGO_URI+'" class="cover-logo-big"></div>'
     +'<div class="cover-mid">'
-      +'<div class="cover-kicker">Quotation &middot; Penawaran Sound System</div>'
-      +'<div class="cover-client">'+coverClientName+'</div>'
-      +'<div class="cover-project">'+coverProject+'</div>'
+      +'<div class="cover-kicker">'+edw('c:k','Quotation &middot; Penawaran Sound System')+'</div>'
+      +'<div class="cover-client">'+edw('c:c',coverClientName)+'</div>'
+      +'<div class="cover-project">'+edw('c:p',coverProject)+'</div>'
       +'<div class="cover-divider"></div>'
       +'<div class="cover-meta-row">'
         +'<div><span class="k">No. Quotation</span><span class="v">'+ref+'</span></div>'
@@ -4701,12 +4822,13 @@ function buildDoc(){
     return customBlocks.filter(function(b){return b.afterKey===key;});
   }
   function blockPageContent(b){
-    var titleHtml=b.title?'<div class="db-hd"><div class="db-title-lg">'+escapeHtml(b.title)+'</div></div>':'';
+    var tKey='b:'+b.id+':t';
+    var titleHtml=(b.title||edv(tKey,'')||pagesMode)?'<div class="db-hd"><div class="db-title-lg">'+edw(tKey,escapeHtml(b.title||''))+'</div></div>':'';
     if(b.type==='image'){
-      var capHtml=b.caption?'<div class="block-page-caption">'+escapeHtml(b.caption)+'</div>':'';
+      var capHtml=(b.caption||edv('b:'+b.id+':c',''))?'<div class="block-page-caption">'+edw('b:'+b.id+':c',escapeHtml(b.caption||''))+'</div>':'';
       return pageHdr()+titleHtml+'<img src="'+b.image+'" class="block-page-img">'+capHtml;
     }
-    return pageHdr()+titleHtml+'<div class="block-page-text">'+escapeHtml(b.text||'')+'</div>';
+    return pageHdr()+titleHtml+'<div class="block-page-text">'+edw('b:'+b.id+':x',escapeHtml(b.text||'').replace(/\n/g,'<br>'),'div')+'</div>';
   }
 
   // ── PAGE 2+: Quotation + Daftar Barang (one page per section/room),
@@ -4733,7 +4855,7 @@ function buildDoc(){
     // the full letterhead (logo + speaker banner) so no printed page is
     // ever header-less. Rows are measured in a hidden page; a page is
     // "full" once its content would pass the printable height.
-    var secHeadHtml = (g.name?'<div class="db-hd"><div class="db-title-lg">'+escapeHtml(g.name)+'</div></div>':'');
+    var secHeadHtml = (g.name?'<div class="db-hd"><div class="db-title-lg">'+edw('s:'+g.name,escapeHtml(g.name))+'</div></div>':'');
     var tblHead = '<table class="doc doc-table-pg"><thead><tr>'
         +'<th style="width:14%">Produk</th>'
         +'<th style="width:'+gambarPct+'%;text-align:center">Gambar</th>'
@@ -4794,6 +4916,7 @@ function buildDoc(){
   }).join('');
 
   wrap.innerHTML='<div id="doc-scale-wrap">'+page0+numberedPages+'</div>';
+  wrap.classList.toggle('pg-mode',pagesMode);
 
   // Populate the fixed print footer (appears on every physical page)
   var fl=document.getElementById('doc-footer-left');
@@ -4841,6 +4964,7 @@ function clearAll(){
   applyPaymentTermsState('5050','');
   setDocShowPpn(true);
   setDocLinePpn(false);
+  docEdits={};
   renderBlocksList();
   ['client','contact','address','project','qt-date','client-code','ref-override'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('seq-num').value=1;
@@ -4966,6 +5090,7 @@ function currentQuoteRecord(){
     payment_terms_custom:paymentTermsCustom,
     show_ppn:docShowPpn,
     line_ppn:docLinePpn,
+    doc_edits:docEdits,
     grand_total:calcTotals().grand,
     updated_at:new Date().toISOString()
   };
@@ -4999,7 +5124,7 @@ function saveQuoteToHistory(){
   // Fields added after the original "quotes" table was created — an older
   // table may not have these columns yet, in which case we retry once
   // without all of them rather than failing the whole save.
-  var OPTIONAL_FIELDS=['payment_terms','payment_terms_custom','show_ppn','line_ppn'];
+  var OPTIONAL_FIELDS=['payment_terms','payment_terms_custom','show_ppn','line_ppn','doc_edits'];
   postRecord(record).then(function(){
     setStatus('');
     showSuccessToast('Tersimpan ke History ✓ ('+record.ref+')');
@@ -5101,6 +5226,7 @@ function loadQuoteFromHistory(ref){
     applyPaymentTermsState(r.payment_terms||'5050',r.payment_terms_custom||'');
     setDocShowPpn(r.show_ppn!==false);
     setDocLinePpn(r.line_ppn===true);
+    docEdits=r.doc_edits||{};
     currentSection='';
     updateRef();
     refreshSectionSelect();
