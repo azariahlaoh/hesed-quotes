@@ -356,6 +356,30 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .pg-addbar{margin:8px 0}.pg-addbtn{width:100%;border:1.5px dashed #c9a227;background:#fffbea;color:#6b5a1b;border-radius:8px;padding:9px;font-size:12px;cursor:pointer}
 @media (max-width:800px){.pg-add{left:8px;right:8px;top:auto;bottom:8px;width:auto;max-height:60vh}}
 @media print{.pg-ctl,.pg-addbar,.pg-add,.pg-toolbar{display:none!important}}
+.pg-libhd{font-size:11px;font-weight:600;color:#555;margin:2px 0 5px;text-transform:uppercase;letter-spacing:.04em}
+.pg-res{display:flex;gap:8px;align-items:center}.pg-res .pg-th{width:46px;height:38px;flex:0 0 46px;object-fit:contain;background:#f4f4f4;border-radius:5px}
+.pg-res .pg-th.ph{display:flex;align-items:center;justify-content:center;font-size:9px;color:#999;text-align:center;line-height:1.1}
+.pg-res .pg-rb{flex:1;min-width:0}
+.pg-row>td:first-child{position:relative}
+.pg-gut{position:absolute;left:-60px;top:50%;transform:translateY(-50%);display:flex;gap:4px;align-items:center;opacity:0;transition:opacity .15s;z-index:6}
+.pg-row:hover .pg-gut,.pg-gut:focus-within{opacity:1}
+@media (hover:none){.pg-gut{opacity:.9}}
+.pg-plus{width:26px;height:26px;border-radius:50%;background:#1b1b1b;color:#fff;border:0;font-size:18px;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.pg-plus:hover{background:#c9a227;color:#111}
+.pg-drag{cursor:grab;color:#999;font-size:16px;padding:2px 3px;user-select:none;letter-spacing:-3px}
+.pg-dragging>td{opacity:.35}
+.pg-drop-top>td{box-shadow:inset 0 3px 0 #c9a227}.pg-drop-bottom>td{box-shadow:inset 0 -3px 0 #c9a227}
+@keyframes pgflash{0%{background:rgba(255,214,70,.65)}100%{background:transparent}}
+.pg-new>td{animation:pgflash 1.6s ease-out}
+.pg-secbar{margin:10px 0 0;padding:10px;border:1.5px dashed #c9a227;border-radius:10px;background:#fffbea;font-size:11px;color:#6b5a1b}
+.pg-secbar .t{font-weight:600;margin-bottom:6px}.pg-secbar .c{display:flex;flex-wrap:wrap;gap:6px}
+.pg-secbar button{border:1px solid #d8bd5a;background:#fff;border-radius:16px;padding:4px 11px;font-size:11px;cursor:pointer}.pg-secbar button:hover{background:#c9a227;color:#111}
+.pg-toasts{position:fixed;left:14px;bottom:14px;z-index:90;display:flex;flex-direction:column;gap:8px;max-width:340px}
+.pg-toast{position:relative;overflow:hidden;background:#1b1b1b;color:#fff;border-radius:10px;padding:10px 12px 14px;font-size:12px;display:flex;gap:10px;align-items:center;box-shadow:0 8px 24px rgba(0,0,0,.3);animation:pgtin .25s ease-out}
+.pg-toast button{border:0;background:#c9a227;color:#111;border-radius:7px;padding:5px 11px;font-weight:700;cursor:pointer;margin-left:auto}
+.pg-toast .bar{position:absolute;left:0;bottom:0;height:4px;background:#c9a227;animation:pgbar 10s linear forwards}
+@keyframes pgbar{from{width:100%}to{width:0}}@keyframes pgtin{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+@media print{.pg-gut,.pg-secbar,.pg-toasts{display:none!important}}
 .pg-toolbar{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:#fff8dc;border:1px solid #e6cf7a;border-radius:8px;padding:6px 10px;margin:8px auto;max-width:794px;font-size:12px}
 .pg-toolbar button{border:1px solid #cdb55a;background:#fff;border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer}
 .pg-toolbar .pg-hint{flex:1 1 100%;color:#6b5a1b}
@@ -1169,12 +1193,18 @@ td:nth-child(4),th:nth-child(4){text-align:center}
     <div id="pg-log" class="pg-log"></div>
   </div>
   <div id="pg-cus" style="display:none">
+    <div class="pg-row2"><label>Qty <input id="pg-c-qty" type="number" min="1" value="1"></label></div>
+    <div class="pg-libhd">Pernah dibuat (dari export / quotation lama)</div>
+    <input id="pg-lib-q" class="pg-q" placeholder="Cari custom lama..." oninput="pgLibRender()" autocomplete="off">
+    <div id="pg-lib" class="pg-results" style="max-height:30vh"></div>
+    <div class="pg-libhd" style="margin-top:10px">Atau buat baru</div>
     <input id="pg-c-code" class="pg-q" placeholder="Nama / kode item">
     <input id="pg-c-desc" class="pg-q" placeholder="Deskripsi">
-    <div class="pg-row2"><label>Harga <input id="pg-c-price" type="number" step="1000" placeholder="boleh minus"></label><label>Qty <input id="pg-c-qty" type="number" min="1" value="1"></label></div>
+    <div class="pg-row2"><label>Harga <input id="pg-c-price" type="number" step="1000" placeholder="boleh minus"></label></div>
     <button type="button" class="pg-go" onclick="pgAddCustom()">Tambahkan</button>
   </div>
 </div>
+<div id="pg-toasts" class="pg-toasts"></div>
 <div id="pg-toolbar" class="pg-toolbar" style="display:none">
   <span class="pg-hint">Klik teks di halaman untuk mengedit. Harga, qty, dan total terkunci.</span>
   <button type="button" onmousedown="event.preventDefault()" onclick="pgCmd('bold')" title="Tebal"><b>B</b></button>
@@ -2783,6 +2813,7 @@ function buildRtfString(){
 
 function exportToWord(){
   if(!items.length){alert('Tambahkan produk dahulu di tab Builder.');return;}
+  customLibRemember();
   try{
     var rtf=buildRtfString();
     var refName=(getRef()||'Quotation').replace(/[^a-zA-Z0-9_-]/g,'_');
@@ -2801,6 +2832,7 @@ function exportToWord(){
 var RP_FMT='"Rp" #,##0;-"Rp" #,##0';
 async function exportToExcel(){
   if(!items.length){alert('Tambahkan produk dahulu di tab Builder.');return;}
+  customLibRemember();
   if(typeof ExcelJS==='undefined'){alert('Pustaka Excel belum termuat — cek koneksi internet lalu coba lagi.');return;}
   try{
     var ref=getRef()||'Quotation';
@@ -2925,6 +2957,7 @@ function getRef(){
 // the quote number just for the print, so files saved to disk are named
 // like the quotation instead of the generic app title.
 function printAsRef(){
+  customLibRemember();
   var ref=(getRef()||'HESED Quote').trim();
   var original=document.title;
   document.title=ref;
@@ -4694,18 +4727,51 @@ document.addEventListener('focusout',function(e){
 
 /* ---- Mode Pages: add / change products right on the page ---- */
 var pgAddSection=null, pgAddTab='cat', pgAddLog=[];
+function pgRects(){var m={};document.querySelectorAll('.pg-row').forEach(function(r){m[r.dataset.uid]=r.getBoundingClientRect().top+window.scrollY;});return m;}
 function pgRefresh(){
   // deferred: a qty/discount <input> in the document fires change while it is still
   // focused, and re-rendering inside that blur would try to remove a node mid-event
-  setTimeout(function(){var y=window.scrollY;renderAll();buildDoc();window.scrollTo(0,y);},0);
+  setTimeout(function(){
+    var before=pgRects(), y=window.scrollY;
+    renderAll();buildDoc();window.scrollTo(0,y);
+    var fresh=null;
+    document.querySelectorAll('.pg-row').forEach(function(r){
+      var uid=r.dataset.uid, now=r.getBoundingClientRect().top+window.scrollY;
+      if(uid in before){
+        var d=before[uid]-now;
+        if(Math.abs(d)>2){
+          var cells=[].slice.call(r.children);
+          cells.forEach(function(c){c.style.transition='none';c.style.transform='translateY('+d+'px)';c.style.position='relative';c.style.zIndex='5';});
+          void r.offsetHeight;
+          cells.forEach(function(c){c.style.transition='transform .32s cubic-bezier(.2,.8,.2,1)';c.style.transform='';});
+          setTimeout(function(){cells.forEach(function(c){c.style.transition='';c.style.zIndex='';});},360);
+        }
+      } else { r.classList.add('pg-new'); fresh=r; }
+    });
+    if(fresh){var rc=fresh.getBoundingClientRect();if(rc.top<80||rc.bottom>window.innerHeight-40)fresh.scrollIntoView({block:'center',behavior:'smooth'});}
+  },0);
 }
 function pgQtySet(i,v){if(!items[i])return;items[i].qty=Math.max(1,parseInt(v,10)||1);pgRefresh();}
 function pgQty(i,d){if(items[i])pgQtySet(i,(items[i].qty||1)+d);}
 function pgDisc(i,v){if(!items[i])return;items[i].itemDisc=Math.max(0,Math.min(100,parseFloat(v)||0));pgRefresh();}
+var pgUndoSeq=0, pgUndoMap={};
 function pgDel(i){
-  if(!items[i])return;
-  if(!confirm('Hapus '+(items[i].displayName||items[i].code)+' dari quotation?'))return;
-  items.splice(i,1);pgRefresh();
+  var it=items[i]; if(!it)return;
+  var id=++pgUndoSeq;
+  items.splice(i,1);
+  pgRefresh();
+  var el=document.createElement('div'); el.className='pg-toast';
+  el.innerHTML='<span>&#128465; <b></b> dihapus</span><button type="button">Urungkan</button><i class="bar"></i>';
+  el.querySelector('b').textContent=it.displayName||it.code;
+  el.querySelector('button').onclick=function(){pgUndo(id);};
+  document.getElementById('pg-toasts').appendChild(el);
+  pgUndoMap[id]={it:it,idx:i,el:el,timer:setTimeout(function(){el.remove();delete pgUndoMap[id];},10000)};
+}
+function pgUndo(id){
+  var e=pgUndoMap[id]; if(!e)return;
+  clearTimeout(e.timer); e.el.remove(); delete pgUndoMap[id];
+  items.splice(Math.min(e.idx,items.length),0,e.it);
+  pgRefresh();
 }
 function pgMove(i,dir){
   var it=items[i]; if(!it)return;
@@ -4726,12 +4792,23 @@ function pgRowCtl(it){
     +'<button type="button" onclick="pgDel('+i+')" title="Hapus">&#128465;</button>'
   +'</div>';
 }
-function pgOpenAdd(sec){
+var pgInsertAt=null;
+function pgOpenAdd(sec,insertAt,label){
   pgAddSection=sec||'';
-  document.getElementById('pg-add-sec').textContent='ke bagian: '+(pgAddSection||'(Umum)');
+  pgInsertAt=(insertAt==null||insertAt==='')?null:insertAt;
+  document.getElementById('pg-add-sec').textContent='ke bagian: '+(pgAddSection||'(Umum)')+(label?(' · '+label):'');
   document.getElementById('pg-add').style.display='block';
   pgTab(pgAddTab);pgSearch();
-  setTimeout(function(){var q=document.getElementById('pg-q');if(q)q.focus();},30);
+  setTimeout(function(){var q=document.getElementById(pgAddTab==='cat'?'pg-q':'pg-lib-q');if(q)q.focus();},30);
+}
+function pgOpenAddAfter(uid){
+  var i=items.findIndex(function(x){return itemUid(x)===uid;}); if(i<0)return;
+  pgOpenAdd(items[i].section||'',i+1,'setelah '+(items[i].displayName||items[i].code));
+}
+function pgPlaceNew(){
+  if(pgInsertAt==null)return;
+  var it=items.pop(), at=Math.min(pgInsertAt,items.length);
+  items.splice(at,0,it); pgInsertAt=at+1;
 }
 function pgCloseAdd(){document.getElementById('pg-add').style.display='none';pgAddSection=null;}
 function pgTab(t){
@@ -4740,6 +4817,7 @@ function pgTab(t){
   document.getElementById('pg-cus').style.display=t==='cus'?'block':'none';
   document.getElementById('pg-tab-cat').classList.toggle('on',t==='cat');
   document.getElementById('pg-tab-cus').classList.toggle('on',t==='cus');
+  if(t==='cus'){ensurePairingData(pgLibRender);pgLibRender();}
 }
 function pgPriceLabel(p){return (p.series&&p.series.indexOf('SM-')===0)?('IDR '+(p.idrDirect||0).toLocaleString('id-ID')):('€'+(p.price||0).toLocaleString());}
 function pgSearch(){
@@ -4752,8 +4830,9 @@ function pgSearch(){
   }
   if(toks.length)out.sort(function(a,b){var ca=PRODUCTS[a].code.toLowerCase(),cb=PRODUCTS[b].code.toLowerCase();return (cb.indexOf(toks[0])===0)-(ca.indexOf(toks[0])===0);});
   document.getElementById('pg-results').innerHTML=out.length?out.map(function(k){
-    var p=PRODUCTS[k];
-    return '<div class="pg-res" onclick="pgAdd('+k+')"><span class="p">'+pgPriceLabel(p)+'</span><b>'+escapeHtml(p.code)+'</b> <span class="d">'+escapeHtml(p.series||'')+'</span><div class="d">'+escapeHtml((p.desc||'').substring(0,90))+'</div></div>';
+    var p=PRODUCTS[k], img=productImageSrc(p.code);
+    var th=img?'<img class="pg-th" src="'+img+'" alt="">':'<div class="pg-th ph">'+escapeHtml(p.code)+'</div>';
+    return '<div class="pg-res" onclick="pgAdd('+k+')">'+th+'<div class="pg-rb"><span class="p">'+pgPriceLabel(p)+'</span><b>'+escapeHtml(p.code)+'</b> <span class="d">'+escapeHtml(p.series||'')+'</span><div class="d">'+escapeHtml((p.desc||'').substring(0,90))+'</div></div></div>';
   }).join(''):'<div class="pg-res"><span class="d">Tidak ada yang cocok.</span></div>';
 }
 function pgEnsureSection(){
@@ -4767,6 +4846,7 @@ function pgAdd(k,qtyOverride){
   var disc=Math.max(0,Math.min(100,parseFloat(document.getElementById('pg-disc').value)||0));
   pgEnsureSection();
   addProductToItems(p,qty,{fxOn:true,fxRate:globalFxRate,fxCurrency:'EUR',itemDisc:disc});
+  pgPlaceNew();
   pgAddLog.unshift('✓ '+p.code+' ×'+qty+(disc?(' (diskon '+disc+'%)'):''));
   document.getElementById('pg-log').innerHTML=pgAddLog.slice(0,6).map(escapeHtml).join('<br>');
   pgRefresh();
@@ -4778,29 +4858,128 @@ function pgAdd(k,qtyOverride){
     }).join('')):'';
   });
 }
+function pgPushCustom(code,desc,price,qty,disc,specs){
+  pgEnsureSection();
+  items.push({code:code,displayName:code,series:'Custom',desc:desc||code,catalogPrice:price,eurPrice:null,idrPrice:null,idrDirect:null,qty:qty,specs:specs||'',custom:true,section:currentSection,includesPPN:false,fxOn:false,fxRate:0,fxCurrency:'',itemDisc:disc||0,twMarkupOn:false,docImgSize:'lg',docDescSize:'md'});
+  pgPlaceNew();
+}
 function pgAddCustom(){
   var code=document.getElementById('pg-c-code').value.trim(), desc=document.getElementById('pg-c-desc').value.trim();
   var price=parseFloat(document.getElementById('pg-c-price').value), qty=Math.max(1,parseInt(document.getElementById('pg-c-qty').value,10)||1);
   if(!code){alert('Isi nama item dulu.');return;}
   if(!price||isNaN(price)){alert('Isi harga (boleh minus untuk potongan).');return;}
-  pgEnsureSection();
-  items.push({code:code,displayName:code,series:'Custom',desc:desc||code,catalogPrice:price,eurPrice:null,idrPrice:null,idrDirect:null,qty:qty,specs:'',custom:true,section:currentSection,includesPPN:false,fxOn:false,fxRate:0,fxCurrency:'',itemDisc:0,twMarkupOn:false,docImgSize:'lg',docDescSize:'md'});
+  pgPushCustom(code,desc,price,qty,0,'');
   ['pg-c-code','pg-c-desc','pg-c-price'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('pg-c-qty').value='1';
   pgRefresh();
 }
+/* custom items remembered from exports / saved quotes / history */
+var CUSTOM_LIB_KEY='hesed_custom_lib', customHistoryLib=[], pgPool=[];
+function customLibKey(c){return (c.code||'')+'|'+(c.desc||'')+'|'+c.price;}
+function customLibLoad(){try{return JSON.parse(localStorage.getItem(CUSTOM_LIB_KEY)||'[]');}catch(e){return [];}}
+function customLibRemember(){
+  try{
+    var lib=customLibLoad(), map={};
+    lib.forEach(function(c){map[customLibKey(c)]=c;});
+    items.forEach(function(it){
+      if(!it.custom)return;
+      var c={code:it.displayName||it.code,desc:it.desc||'',price:it.catalogPrice,disc:itemDiscPct(it)||0,specs:it.specs||''};
+      var k=customLibKey(c);
+      if(map[k]){map[k].t=Date.now();}else{c.t=Date.now();map[k]=c;lib.push(c);}
+    });
+    localStorage.setItem(CUSTOM_LIB_KEY,JSON.stringify(lib.slice(-300)));
+  }catch(e){}
+}
+function pgLibPool(){
+  var seen={},out=[];
+  customLibLoad().sort(function(a,b){return (b.t||0)-(a.t||0);}).forEach(function(c){var k=customLibKey(c);if(!seen[k]){seen[k]=1;c.src='export';out.push(c);}});
+  customHistoryLib.slice().sort(function(a,b){return (b.n||0)-(a.n||0);}).forEach(function(c){var k=customLibKey(c);if(!seen[k]){seen[k]=1;c.src='history';out.push(c);}});
+  return out;
+}
+function pgLibRender(){
+  var box=document.getElementById('pg-lib'); if(!box)return;
+  var q=(document.getElementById('pg-lib-q').value||'').toLowerCase().trim(), toks=q.split(/\s+/).filter(Boolean);
+  pgPool=pgLibPool().filter(function(c){var h=((c.code||'')+' '+(c.desc||'')).toLowerCase();return toks.every(function(t){return h.indexOf(t)!==-1;});}).slice(0,40);
+  box.innerHTML=pgPool.length?pgPool.map(function(c,i){
+    return '<div class="pg-res" onclick="pgAddLib('+i+')"><div class="pg-rb"><span class="p">'+fmt(c.price)+'</span><b>'+escapeHtml(c.code||'')+'</b> <span class="d">'+(c.src==='export'?'dari export':'dari History')+(c.disc?(' · diskon '+c.disc+'%'):'')+'</span><div class="d">'+escapeHtml((c.desc||'').substring(0,90))+'</div></div></div>';
+  }).join(''):'<div class="pg-res"><span class="d">Belum ada custom lama. Item custom yang pernah Dave export akan muncul di sini.</span></div>';
+}
+function pgAddLib(i){
+  var c=pgPool[i]; if(!c)return;
+  var qty=Math.max(1,parseInt(document.getElementById('pg-c-qty').value,10)||1);
+  pgPushCustom(c.code,c.desc,c.price,qty,c.disc||0,c.specs||'');
+  pgAddLog.unshift('✓ '+c.code+' ×'+qty);
+  pgRefresh();
+}
+/* sections: obvious add buttons */
+var PG_SEC_PRESETS=['Line Array System','Mixer System','Subwoofer System','Amplifier & Processor','Kabel & Aksesori','Jasa & Instalasi'];
+function pgSecBarHtml(afterName,title){
+  var names=PG_SEC_PRESETS.filter(function(n){return sectionList.indexOf(n)===-1;});
+  var ea=escapeHtml(afterName||'');
+  return '<div class="pg-secbar"><div class="t">'+(title||('&#65291; Bagian baru setelah &ldquo;'+escapeHtml(afterName||'Umum')+'&rdquo;'))+'</div><div class="c">'
+    +names.map(function(n){return '<button type="button" data-after="'+ea+'" data-n="'+escapeHtml(n)+'" onclick="pgSecChip(this)">'+escapeHtml(n)+'</button>';}).join('')
+    +'<button type="button" data-after="'+ea+'" data-n="" onclick="pgSecChip(this)">Nama lain&hellip;</button></div></div>';
+}
+function pgSecChip(b){
+  var after=b.dataset.after||'', name=b.dataset.n;
+  if(!name){name=prompt('Nama bagian baru:','');if(name===null)return;name=name.trim();if(!name)return;}
+  var ei=sectionList.indexOf(name); if(ei>=0)sectionList.splice(ei,1);
+  var ai=sectionList.indexOf(after);
+  sectionList.splice(ai<0?sectionList.length:ai+1,0,name);
+  pgOpenAdd(name);
+}
+/* drag & drop to reorder rows (desktop); up/down buttons work everywhere */
+var pgDragUid=null;
+function pgDropClean(){document.querySelectorAll('.pg-drop-top,.pg-drop-bottom,.pg-dragging').forEach(function(r){r.classList.remove('pg-drop-top','pg-drop-bottom','pg-dragging');});}
+document.addEventListener('dragstart',function(e){
+  var h=e.target.closest&&e.target.closest('.pg-drag'); if(!h)return;
+  var row=h.closest('.pg-row'); pgDragUid=row.dataset.uid;
+  e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain',pgDragUid);
+  try{e.dataTransfer.setDragImage(row,24,16);}catch(_){}
+  setTimeout(function(){row.classList.add('pg-dragging');},0);
+});
+document.addEventListener('dragover',function(e){
+  if(!pgDragUid)return;
+  document.querySelectorAll('.pg-drop-top,.pg-drop-bottom').forEach(function(r){r.classList.remove('pg-drop-top','pg-drop-bottom');});
+  var row=e.target.closest&&e.target.closest('.pg-row');
+  if(!row||row.dataset.uid===pgDragUid)return;
+  e.preventDefault();
+  var r=row.getBoundingClientRect();
+  row.classList.add(e.clientY<r.top+r.height/2?'pg-drop-top':'pg-drop-bottom');
+});
+document.addEventListener('drop',function(e){
+  if(!pgDragUid)return;
+  var row=e.target.closest&&e.target.closest('.pg-row');
+  if(!row||row.dataset.uid===pgDragUid){pgDropClean();pgDragUid=null;return;}
+  e.preventDefault();
+  var before=row.classList.contains('pg-drop-top'), tgt=row.dataset.uid, src=pgDragUid;
+  pgDropClean();pgDragUid=null;
+  pgMoveTo(src,tgt,before);
+});
+document.addEventListener('dragend',function(){pgDropClean();pgDragUid=null;});
+function pgMoveTo(srcUid,tgtUid,before){
+  var si=items.findIndex(function(x){return itemUid(x)===srcUid;}); if(si<0)return;
+  var it=items.splice(si,1)[0];
+  var ti=items.findIndex(function(x){return itemUid(x)===tgtUid;});
+  if(ti<0){items.splice(si,0,it);return;}
+  it.section=items[ti].section;
+  items.splice(before?ti:ti+1,0,it);
+  pgRefresh();
+}
 function pgNewSection(){
-  var name=prompt('Nama bagian/ruangan baru (misal: Line Array System, Mixer System):','');
+  var secs=sectionList.filter(function(n){return n;}), last=secs.length?secs[secs.length-1]:'';
+  var name=prompt('Nama bagian baru (misal: Line Array System, Mixer System):','');
   if(name===null)return; name=name.trim();
   if(!name){alert('Nama tidak boleh kosong.');return;}
-  if(sectionList.indexOf(name)===-1)sectionList.push(name);
+  var ei=sectionList.indexOf(name); if(ei>=0)sectionList.splice(ei,1);
+  sectionList.push(name);
   pgOpenAdd(name);
 }
 
 function buildDoc(){
   var wrap=document.getElementById('doc-wrap');
   if(!items.length){
-    wrap.innerHTML='<div class="empty-state" style="padding:60px 20px;background:#fff">'+(pagesMode?'Belum ada produk.<br><br><button type="button" class="pg-addbtn" style="max-width:320px" data-sec="" onclick="pgOpenAdd(this.dataset.sec)">&#65291; Tambah produk pertama</button>':'Add items in the Builder tab first.')+'</div>';
+    wrap.innerHTML='<div class="empty-state" style="padding:60px 20px;background:#fff">'+(pagesMode?'<b style="font-size:16px">Mulai susun quotation</b><br><br>'+pgSecBarHtml('','Pilih bagian pertama, lalu tambah produknya')+'<br><button type="button" class="pg-addbtn" style="max-width:320px" data-sec="" onclick="pgOpenAdd(this.dataset.sec)">&#65291; Tambah produk tanpa bagian</button>':'Add items in the Builder tab first.')+'</div>';
     return;
   }
 
@@ -4873,8 +5052,9 @@ function buildDoc(){
       var descCfg=DOC_DESC_SIZES[it.docDescSize]||DOC_DESC_SIZES.md;
       var descStyle='font-size:'+descCfg.fontSize+(descCfg.bold?';font-weight:700':'');
       var deskPct=46-(gambarPct-8); // keep the row's columns summing to 100%
-      return '<tr>'
+      return '<tr'+(pagesMode?' class="pg-row" data-uid="'+itemUid(it)+'"':'')+'>'
         +'<td style="width:14%">'
+          +(pagesMode?'<div class="pg-gut"><span class="pg-drag" draggable="true" title="Tarik untuk memindahkan">&#8942;&#8942;</span><button type="button" class="pg-plus" onclick="pgOpenAddAfter(this.closest(\'.pg-row\').dataset.uid)" title="Tambah produk di bawah ini">+</button></div>':'')
           +'<div class="produk-name">'+edw('i:'+itemUid(it)+':n',(it.displayName||it.code))+'</div>'
           +'<div class="produk-series">'+it.series+'</div>'
         +'</td>'
@@ -5014,7 +5194,7 @@ function buildDoc(){
     var PAGE_MAX=930; // px of content per printed A4 page, leaving room for the footer
     function pageHtml(chunk,withFirst,withTail){
       return pageHdr()+(withFirst?firstExtra:'')+secHeadHtml+tblHead
-        +buildRowsHtml(chunk,gambarPct)+'</tbody></table>'+((withTail&&pagesMode)?'<div class="pg-addbar"><button type="button" class="pg-addbtn" data-sec="'+escapeHtml(g.name||'')+'" onclick="pgOpenAdd(this.dataset.sec)">&#65291; Tambah produk ke bagian ini</button></div>':'')+(withTail?subtotalsHtml:'');
+        +buildRowsHtml(chunk,gambarPct)+'</tbody></table>'+((withTail&&pagesMode)?'<div class="pg-addbar"><button type="button" class="pg-addbtn" data-sec="'+escapeHtml(g.name||'')+'" onclick="pgOpenAdd(this.dataset.sec)">&#65291; Tambah produk ke bagian ini</button></div>':'')+(withTail?subtotalsHtml:'')+((withTail&&pagesMode)?pgSecBarHtml(g.name||''):'');
     }
     function fits(chunk,withFirst,withTail){
       probe.innerHTML=pageHtml(chunk,withFirst,withTail);
@@ -5168,6 +5348,13 @@ function ensurePairingData(cb){
         });
       });
     });
+    var cm={};
+    rows.forEach(function(r){(r.items||[]).forEach(function(it){
+      if(!it||!it.custom)return;
+      var c={code:it.displayName||it.code,desc:it.desc||'',price:it.catalogPrice,disc:parseFloat(it.itemDisc)||0,specs:it.specs||''};
+      var k=customLibKey(c); if(cm[k])cm[k].n++; else{c.n=1;cm[k]=c;}
+    });});
+    customHistoryLib=Object.keys(cm).map(function(k){return cm[k];});
     pairingData=map;
     pairingDataLoading=false;
     if(cb)cb();
@@ -5240,6 +5427,7 @@ function saveQuoteToHistory(){
   var statusEls=[document.getElementById('save-history-status')].filter(Boolean);
   function setStatus(msg){statusEls.forEach(function(el){el.textContent=msg;});}
   if(!items.length){alert('Add products before saving to history.');return;}
+  customLibRemember();
   if(!historyConfigured()){
     setStatus('Quote history isn\'t connected yet — see the History tab for setup steps.');
     return;
