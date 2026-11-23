@@ -2823,12 +2823,14 @@ function buildRtfString(){
   rtfTextBlocksFor('__end__');
 
   out+='\\page\n';
-  out+='\\pard\\b\\fs32 Syarat dan Ketentuan\\b0\\fs22\\par\\par\n';
+  out+='\\pard\\b\\fs32 '+escapeRtf(edPlain('t:title','Syarat dan Ketentuan'))+'\\b0\\fs22\\par\\par\n';
 
+  var TNC_KEYS=[['t:h1',['t:l1','t:pay','t:l2']],['t:h2',['t:l3']],['t:h3',['t:l4','t:l5','t:l6','t:l7']],['t:h4',['t:l8']]], tncIdx=0;
   function tnc(title,list){
-    out+='\\b '+escapeRtf(title)+'\\b0\\par\n';
+    var tk=TNC_KEYS[tncIdx++]||[null,[]];
+    out+='\\b '+escapeRtf(tk[0]?edPlain(tk[0],title):title)+'\\b0\\par\n';
     list.forEach(function(t,i){
-      out+=(i+1)+'. '+escapeRtf(t)+'\\par\n';
+      out+=(i+1)+'. '+escapeRtf(tk[1][i]?edPlain(tk[1][i],t):t)+'\\par\n';
     });
     out+='\\par\n';
   }
@@ -2859,6 +2861,7 @@ function buildRtfString(){
 }
 
 function exportToWord(){
+  if(typeof pgFlush==='function')pgFlush();
   if(!items.length){alert('Tambahkan produk dahulu di tab Builder.');return;}
   customLibRemember();
   try{
@@ -2878,6 +2881,7 @@ function exportToWord(){
 // build above — the free SheetJS build can't write cell styles at all).
 var RP_FMT='"Rp" #,##0;-"Rp" #,##0';
 async function exportToExcel(){
+  if(typeof pgFlush==='function')pgFlush();
   if(!items.length){alert('Tambahkan produk dahulu di tab Builder.');return;}
   customLibRemember();
   if(typeof ExcelJS==='undefined'){alert('Pustaka Excel belum termuat — cek koneksi internet lalu coba lagi.');return;}
@@ -2974,6 +2978,7 @@ function updateRef(){
   var pillEl=document.getElementById('top-bar-ref-val');
   if(pillEl)pillEl.textContent=getRef()||auto;
   renderAll(); // refresh discount preview
+  if(typeof syncDocTitle==='function')syncDocTitle();
 }
 
 // Mobile "Tambah Produk Pertama" CTA — a clear next step instead of a wall of fields
@@ -3002,21 +3007,20 @@ function getRef(){
 // Browsers name a "Save as PDF" print job after document.title — swap it to
 // the quote number just for the print, so files saved to disk are named
 // like the quotation instead of the generic app title.
+var BASE_TITLE=document.title;
+// Browsers name a "Save as PDF" job after document.title. Keep the title equal to the
+// quotation code for as long as the Preview tab is open (not only for a few seconds
+// around window.print()), so the PDF is named e.g. 2611QT001 instead of the app title.
+function syncDocTitle(){
+  var pv=document.getElementById('pane-preview');
+  var onPrev=pv&&pv.classList.contains('active');
+  document.title=(onPrev&&items.length)?((getRef()||BASE_TITLE).trim()):BASE_TITLE;
+}
 function printAsRef(){
+  if(typeof pgFlush==='function')pgFlush();
   customLibRemember();
-  var ref=(getRef()||'HESED Quote').trim();
-  var original=document.title;
-  document.title=ref;
-  var restored=false;
-  function restore(){
-    if(restored)return;
-    restored=true;
-    document.title=original;
-    window.removeEventListener('afterprint',restore);
-  }
-  window.addEventListener('afterprint',restore);
+  document.title=(getRef()||'HESED Quote').trim();
   window.print();
-  setTimeout(restore,4000); // fallback for browsers that don't fire afterprint reliably
 }
 
 function loadPersistedSeq(){
@@ -3060,12 +3064,14 @@ function loadPersistedFxRate(){
 
 
 function showTab(t){
+  if(typeof pgFlush==='function'&&t!=='preview')pgFlush();
   document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));
   document.querySelectorAll('.pane').forEach(e=>e.classList.remove('active'));
   document.getElementById('pane-'+t).classList.add('active');
   document.querySelector('.tab[onclick="showTab(\''+t+'\')"]').classList.add('active');
   if(t==='preview')buildDoc();
   if(t==='history')loadQuoteHistoryList();
+  syncDocTitle();
 }
 
 function showSubTab(t){
@@ -4587,6 +4593,7 @@ function internalBreakdown(it){
 
 var docInternal=false;
 function openInternalSheet(){
+  if(typeof pgFlush==='function')pgFlush();
   if(!items.length){alert('Tambahkan barang dulu di tab Builder.');return;}
   var sp=pagesMode; pagesMode=false; docInternal=true;
   var tmp=document.createElement('div');
@@ -4650,7 +4657,52 @@ function sanitizeEdit(html){
   }
   return walk(src).replace(/(<br>)+$/,'');
 }
-function pgReflow(){var y=window.scrollY;buildDoc();window.scrollTo(0,y);}
+var pgDirty={};
+function pgPlain(html){
+  var d=document.createElement('div'); d.innerHTML=String(html).replace(/<br\s*\/?>/gi,'\n');
+  return d.textContent.replace(/\u00a0/g,' ').replace(/\n{3,}/g,'\n\n').trim();
+}
+function pgHasFmt(html){return /<(b|i|u|font)\b/i.test(html);}
+// Edits made on the page are written back to the builder data (names, descriptions,
+// section names, client fields, custom pages) so Builder, Preview and every export
+// always agree. Only things with no builder field (T&C, signature, cover kicker) and
+// bold/italic/size formatting stay as document-only overrides.
+function pgSyncEdits(){
+  var keys=Object.keys(pgDirty); pgDirty={};
+  if(!keys.length)return false;
+  var touched=false;
+  keys.forEach(function(key){
+    var html=docEdits[key]; if(html==null)return;
+    var plain=pgPlain(html), keep=pgHasFmt(html), m, drop=!keep;
+    if((m=/^i:([^:]+):(n|d)$/.exec(key))){
+      var it=items.filter(function(x){return x._uid===m[1];})[0]; if(!it)return;
+      if(m[2]==='n'){ if(plain){it.displayName=plain;touched=true;} else {drop=true;} }
+      else { it.desc=plain; it.specs=''; touched=true; }
+    } else if((m=/^s:(.*)$/.exec(key))){
+      var old=m[1], i=sectionList.indexOf(old);
+      drop=true;
+      if(i>=0&&plain&&plain!==old){ renameSection(i,plain); touched=true; }
+    } else if(key==='m:to'||key==='c:c'){
+      var cEl=document.getElementById('contact'), clEl=document.getElementById('client');
+      var lines=plain.split('\n').map(function(x){return x.trim();}).filter(Boolean);
+      if(key==='m:to'&&cEl.value&&clEl.value){ cEl.value=lines[0]||''; clEl.value=lines.slice(1).join(' '); }
+      else if(clEl.value||key==='c:c'&&!cEl.value){ clEl.value=plain.replace(/\n+/g,' '); }
+      else { cEl.value=plain.replace(/\n+/g,' '); }
+      drop=true; touched=true;
+    } else if(key==='m:addr'){ document.getElementById('address').value=plain; drop=true; touched=true; }
+    else if(key==='m:proj'||key==='c:p'){ document.getElementById('project').value=plain.replace(/\n+/g,' '); drop=true; touched=true; }
+    else if((m=/^b:([^:]+):(t|x|c)$/.exec(key))){
+      var bl=customBlocks.filter(function(x){return x.id===m[1];})[0]; if(!bl)return;
+      if(m[2]==='t')bl.title=plain; else if(m[2]==='x')bl.text=plain; else bl.caption=plain;
+      touched=true;
+    } else { return; }
+    if(drop)delete docEdits[key];
+  });
+  if(touched){ try{renderBlocksList();}catch(e){} updateRef(); scheduleDraftSave(); }
+  return touched;
+}
+function pgFlush(){ if(Object.keys(pgDirty).length)pgSyncEdits(); }
+function pgReflow(){pgSyncEdits();var y=window.scrollY;renderAll();buildDoc();window.scrollTo(0,y);}
 function applyPagesUi(){
   var b=document.getElementById('pg-toggle');
   if(b){b.classList.toggle('btn-dark',pagesMode);b.classList.toggle('btn-outline',!pagesMode);b.innerHTML=pagesMode?'&#9998;&#65039; Mode Pages: ON':'&#9998;&#65039; Mode Pages';}
@@ -4658,7 +4710,7 @@ function applyPagesUi(){
   var w=document.getElementById('doc-wrap'); if(w)w.classList.toggle('pg-mode',pagesMode);
   if(typeof pgSyncFx==='function')pgSyncFx();
 }
-function togglePagesMode(){pagesMode=!pagesMode;if(pagesMode&&typeof pvToggle==='function')pvToggle(true);if(!pagesMode&&typeof pgCloseAdd==='function')pgCloseAdd();applyPagesUi();buildDoc();}
+function togglePagesMode(){pgFlush();pagesMode=!pagesMode;if(pagesMode&&typeof pvToggle==='function')pvToggle(true);if(!pagesMode&&typeof pgCloseAdd==='function')pgCloseAdd();applyPagesUi();buildDoc();}
 function pgCmd(c){document.execCommand(c,false,null);}
 function pgSize(d){
   var cur=parseInt(document.queryCommandValue('fontSize'),10)||3;
@@ -4680,7 +4732,7 @@ function pgNewPage(){
 }
 document.addEventListener('input',function(e){
   var el=e.target.closest&&e.target.closest('.pg-ed'); if(!el)return;
-  docEdits[el.dataset.ek]=sanitizeEdit(el.innerHTML); scheduleDraftSave();
+  docEdits[el.dataset.ek]=sanitizeEdit(el.innerHTML); pgDirty[el.dataset.ek]=true; scheduleDraftSave();
 });
 document.addEventListener('focusin',function(e){
   var el=e.target.closest&&e.target.closest('.pg-ed'); if(el)pgLastKey=el.dataset.ek;
@@ -5370,6 +5422,7 @@ function buildDoc(target){
   wrap.innerHTML='<div id="doc-scale-wrap">'+(docInternal?'':page0)+numberedPages+'</div>';
   if(target)return; // detached build (internal sheet): skip live-page side effects
   wrap.classList.toggle('pg-mode',pagesMode);
+  syncDocTitle();
 
   // Populate the fixed print footer (appears on every physical page)
   var fl=document.getElementById('doc-footer-left');
@@ -5559,6 +5612,7 @@ function currentQuoteRecord(){
 function saveQuoteToHistory(){
   var statusEls=[document.getElementById('save-history-status')].filter(Boolean);
   function setStatus(msg){statusEls.forEach(function(el){el.textContent=msg;});}
+  if(typeof pgFlush==='function')pgFlush();
   if(!items.length){alert('Add products before saving to history.');return;}
   customLibRemember();
   if(!historyConfigured()){
