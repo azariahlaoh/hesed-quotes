@@ -364,7 +364,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .pv-collapsed .doc-custom-bar{display:none}
 .pv-collapsed .print-actions{margin-bottom:6px}
 @media (max-width:800px){.pv-sticky .print-actions{flex-direction:row;flex-wrap:wrap}}
-@media print{.pv-sticky{position:static;box-shadow:none}.pv-collapse{display:none}}
+@media print{.pv-sticky{display:none!important}}
 .pg-badge{background:#c9a227;color:#111;border-radius:10px;padding:1px 8px;font-size:11px;font-weight:700;margin-left:4px}
 .pg-bottom{position:sticky;bottom:-12px;margin:10px -12px -12px;background:#fffbea;border-top:2px solid #c9a227;border-radius:0 0 12px 12px;z-index:3}
 .pg-cartbox{padding:8px 12px 12px;border-top:1px dashed #d8bd5a;background:#fff}
@@ -5343,68 +5343,72 @@ function buildDoc(target){
   var pageContents=[]; // inner HTML for each non-cover .doc-page, in order
   blocksFor('__start__').forEach(function(b){ pageContents.push(blockPageContent(b)); });
 
-  sectionGroups.forEach(function(g, idx){
-    var isFirst = idx===0;
-    var isLast = idx===sectionGroups.length-1;
-    var titleSuffix = g.name ? (' &mdash; '+escapeHtml(g.name)) : '';
-    var gambarPct = DOC_IMG_SIZES[sectionMaxImgSizeKey(g.items)].colPct;
-    var rowsHtml = buildRowsHtml(g.items,gambarPct);
-    var subtotal = g.items.reduce(function(s,it){return s+lineShowOf(it);},0); // follows the PPN-inclusive display mode
-    var subtotalLineHtml = '<div class="doc-tot-sub"><span class="lbl">Subtotal'+(g.name?' &mdash; '+escapeHtml(g.name):'')+'</span><span class="amt">'+fmt(Math.round(subtotal))+'</span></div>';
-    // Last page shows its own subtotal AND the grand total together, so
-    // the recap reads top-to-bottom instead of only showing the final sum.
-    var subtotalsHtml = isLast ? (subtotalLineHtml + totalsHtml + (docInternal?intSummaryHtml:'')) : subtotalLineHtml;
-
-    // Split the section's rows across as many pages as needed, each with
-    // the full letterhead (logo + speaker banner) so no printed page is
-    // ever header-less. Rows are measured in a hidden page; a page is
-    // "full" once its content would pass the printable height.
-    var secHeadHtml = (g.name?'<div class="db-hd"><div class="db-title-lg">'+edw('s:'+g.name,escapeHtml(g.name))+'</div></div>':'');
-    var tblHead = '<table class="doc doc-table-pg"><thead><tr>'
+  // ── Page flow ─────────────────────────────────────────────────
+  // Rows are measured in a hidden A4 page. Sections now SHARE a page when there is
+  // room (heading + table head + at least one row must fit under the previous
+  // section); a section only starts a new page when its first row doesn't fit.
+  var PAGE_MAX=960; // px of content per printed A4 page (printable area is ~1017px), leaving room for the footer
+  var firstExtra='<div class="qt-row"><div class="qt-title">QUOTATION</div><div class="qt-num">'+ref+'</div></div>'+metaHtml;
+  var probe=document.createElement('div');
+  probe.className='doc-page';
+  probe.style.cssText='position:absolute;left:-10000px;top:0;width:794px;box-sizing:border-box;padding:0 18mm;visibility:hidden';
+  document.body.appendChild(probe);
+  var infos=sectionGroups.map(function(g,idx){
+    var isLast=idx===sectionGroups.length-1;
+    var gambarPct=DOC_IMG_SIZES[sectionMaxImgSizeKey(g.items)].colPct;
+    var subtotal=g.items.reduce(function(s2,it){return s2+lineShowOf(it);},0); // follows the PPN-inclusive display mode
+    var subtotalLineHtml='<div class="doc-tot-sub"><span class="lbl">Subtotal'+(g.name?' &mdash; '+escapeHtml(g.name):'')+'</span><span class="amt">'+fmt(Math.round(subtotal))+'</span></div>';
+    // Last section shows its own subtotal AND the grand total together.
+    var subtotalsHtml=isLast?(subtotalLineHtml+totalsHtml+(docInternal?intSummaryHtml:'')):subtotalLineHtml;
+    return {
+      g:g, gambarPct:gambarPct, subtotalsHtml:subtotalsHtml,
+      secHeadHtml:(g.name?'<div class="db-hd"><div class="db-title-lg">'+edw('s:'+g.name,escapeHtml(g.name))+'</div></div>':''),
+      tblHead:'<table class="doc doc-table-pg"><thead><tr>'
         +'<th style="width:14%">Produk</th>'
         +'<th style="width:'+gambarPct+'%;text-align:center">Gambar</th>'
         +'<th>Deskripsi</th>'
         +'<th style="width:6%;text-align:center">QTY</th>'
         +'<th class="r" style="width:13%">Harga</th>'
         +'<th class="r" style="width:13%">Harga QTY</th>'
-      +'</tr></thead><tbody>';
-    var firstExtra = isFirst
-      ? ('<div class="qt-row"><div class="qt-title">QUOTATION</div><div class="qt-num">'+ref+'</div></div>'+metaHtml)
-      : '';
-    var probe=document.createElement('div');
-    probe.className='doc-page';
-    probe.style.cssText='position:absolute;left:-10000px;top:0;width:794px;box-sizing:border-box;padding:0 18mm;visibility:hidden';
-    document.body.appendChild(probe);
-    var PAGE_MAX=930; // px of content per printed A4 page, leaving room for the footer
-    function pageHtml(chunk,withFirst,withTail){
-      return pageHdr()+(withFirst?firstExtra:'')+secHeadHtml+tblHead
-        +buildRowsHtml(chunk,gambarPct)+'</tbody></table>'+((withTail&&pagesMode)?'<div class="pg-addbar"><button type="button" class="pg-addbtn" data-sec="'+escapeHtml(g.name||'')+'" onclick="pgOpenAdd(this.dataset.sec)">&#65291; Tambah produk ke bagian ini</button></div>':'')+(withTail?subtotalsHtml:'')+((withTail&&pagesMode)?pgSecBarHtml(g.name||''):'');
-    }
-    function fits(chunk,withFirst,withTail){
-      probe.innerHTML=pageHtml(chunk,withFirst,withTail);
-      return probe.scrollHeight<=PAGE_MAX;
-    }
-    var remaining=g.items.slice(), pageNo=0;
-    while(remaining.length){
-      var withFirst=isFirst&&pageNo===0;
-      var chunk=[];
-      while(remaining.length){
-        var trial=chunk.concat([remaining[0]]);
-        var isEnd=remaining.length===1;
-        if(chunk.length&&!fits(trial,withFirst,isEnd))break;
-        chunk=trial; remaining.shift();
-      }
-      // The subtotal/total block rides on the last page of the section; if
-      // it doesn't fit under the final rows, move the last row to a new page.
-      if(!remaining.length&&chunk.length>1&&!fits(chunk,withFirst,true)){
-        remaining.unshift(chunk.pop());
-      }
-      pageContents.push(pageHtml(chunk,withFirst,!remaining.length));
-      pageNo++;
-    }
-    document.body.removeChild(probe);
-    blocksFor(g.name).forEach(function(b){ pageContents.push(blockPageContent(b)); });
+      +'</tr></thead><tbody>'
+    };
   });
+  function segHtml(seg,i){
+    var info=seg.info;
+    return '<div class="doc-seg"'+(i>0?' style="margin-top:9mm"':'')+'>'+info.secHeadHtml+info.tblHead
+      +buildRowsHtml(seg.rows,info.gambarPct)+'</tbody></table>'
+      +((seg.tail&&pagesMode)?'<div class="pg-addbar"><button type="button" class="pg-addbtn" data-sec="'+escapeHtml(info.g.name||'')+'" onclick="pgOpenAdd(this.dataset.sec)">&#65291; Tambah produk ke bagian ini</button></div>':'')
+      +(seg.tail?info.subtotalsHtml:'')
+      +((seg.tail&&pagesMode)?pgSecBarHtml(info.g.name||''):'')
+    +'</div>';
+  }
+  function pageHtml(pg,isFirstPage){return pageHdr()+(isFirstPage?firstExtra:'')+pg.segs.map(segHtml).join('');}
+  function fits(pg,isFirstPage){probe.innerHTML=pageHtml(pg,isFirstPage);return probe.scrollHeight<=PAGE_MAX;}
+  var curPage={segs:[]}, pageIdx=0;
+  function flushPage(){
+    if(curPage.segs.length){pageContents.push(pageHtml(curPage,pageIdx===0));pageIdx++;}
+    curPage={segs:[]};
+  }
+  sectionGroups.forEach(function(g,idx){
+    var info=infos[idx], rows=g.items.slice(), seg=null;
+    while(rows.length){
+      if(!seg){seg={info:info,rows:[],tail:false};curPage.segs.push(seg);}
+      seg.rows.push(rows[0]); seg.tail=(rows.length===1);
+      var alone=(curPage.segs.length===1&&seg.rows.length===1);
+      if(alone||fits(curPage,pageIdx===0)){rows.shift();continue;}
+      // doesn't fit: the row (and, for the last row, the subtotal block) moves to a new page
+      seg.rows.pop(); seg.tail=false;
+      if(!seg.rows.length)curPage.segs.pop();
+      flushPage(); seg=null;
+    }
+    // a custom page placed after this section must start on its own page
+    if(blocksFor(g.name).length){
+      flushPage();
+      blocksFor(g.name).forEach(function(b){pageContents.push(blockPageContent(b));});
+    }
+  });
+  flushPage();
+  document.body.removeChild(probe);
 
   blocksFor('__end__').forEach(function(b){ pageContents.push(blockPageContent(b)); });
 
