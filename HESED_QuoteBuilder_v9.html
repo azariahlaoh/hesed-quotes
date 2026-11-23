@@ -356,6 +356,21 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .pg-addbar{margin:8px 0}.pg-addbtn{width:100%;border:1.5px dashed #c9a227;background:#fffbea;color:#6b5a1b;border-radius:8px;padding:9px;font-size:12px;cursor:pointer}
 @media (max-width:800px){.pg-add{left:8px;right:8px;top:auto;bottom:8px;width:auto;max-height:60vh}}
 @media print{.pg-ctl,.pg-addbar,.pg-add,.pg-toolbar{display:none!important}}
+.pg-fxl{font-size:12px;color:#6b5a1b;display:inline-flex;align-items:center;gap:4px}.pg-fxl input{width:78px;border:1px solid #cdb55a;border-radius:6px;padding:3px 6px;font-size:12px}
+.pg-res.sel{background:#fff3c4;box-shadow:inset 3px 0 0 #c9a227}
+.pg-sel{position:sticky;bottom:-12px;margin:10px -12px -12px;padding:10px 12px 12px;background:#fffbea;border-top:2px solid #c9a227;border-radius:0 0 12px 12px}
+.pg-sel-top{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+.pg-sel-img{width:76px;height:60px;flex:0 0 76px;object-fit:contain;background:#fff;border-radius:7px;border:1px solid #eee}
+.pg-sel-img.ph{display:flex;align-items:center;justify-content:center;font-size:10px;color:#999;text-align:center}
+.pg-sel .d{font-size:11px;color:#666;line-height:1.3}.pg-sel .p{font-size:11px;color:#444;margin-top:2px}
+.pg-sel-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:11px;color:#555;margin-bottom:6px}
+.pg-step{display:inline-flex;align-items:center;border:1px solid #cdb55a;border-radius:8px;overflow:hidden;background:#fff}
+.pg-step button{border:0;background:#fff;width:30px;height:30px;font-size:16px;cursor:pointer}.pg-step button:hover{background:#fff3c4}
+.pg-step input{width:44px;border:0;text-align:center;font-size:14px;font-weight:700;height:30px}
+.pg-sel .pg-go:disabled{background:#c9c9c9;cursor:not-allowed}
+.pg-note{margin-top:6px;font-size:11px;color:#2e7d32}
+.pg-sel input.sm{width:62px;border:1px solid #ccc;border-radius:6px;padding:4px 6px;font-size:12px}
+.pg-chip{border:1px solid #ccc;background:#fff;border-radius:4px;padding:1px 6px;font-size:11px;cursor:pointer;color:#999}.pg-chip.on{background:#c9a227;border-color:#c9a227;color:#111;font-weight:700}
 .pg-libhd{font-size:11px;font-weight:600;color:#555;margin:2px 0 5px;text-transform:uppercase;letter-spacing:.04em}
 .pg-res{display:flex;gap:8px;align-items:center}.pg-res .pg-th{width:46px;height:38px;flex:0 0 46px;object-fit:contain;background:#f4f4f4;border-radius:5px}
 .pg-res .pg-th.ph{display:flex;align-items:center;justify-content:center;font-size:9px;color:#999;text-align:center;line-height:1.1}
@@ -1187,22 +1202,21 @@ td:nth-child(4),th:nth-child(4){text-align:center}
   <div class="pg-add-tabs"><button type="button" id="pg-tab-cat" class="on" onclick="pgTab('cat')">Katalog</button><button type="button" id="pg-tab-cus" onclick="pgTab('cus')">Custom / jasa</button></div>
   <div id="pg-cat">
     <input id="pg-q" class="pg-q" placeholder="Cari: VERA50, ELLA6, LSK44, kabel..." oninput="pgSearch()" autocomplete="off">
-    <div class="pg-row2"><label>Qty <input id="pg-qty" type="number" min="1" value="1"></label><label>Diskon % <input id="pg-disc" type="number" min="0" max="100" step="0.5" value="0"></label></div>
     <div id="pg-results" class="pg-results"></div>
     <div id="pg-pair" class="pg-pair"></div>
     <div id="pg-log" class="pg-log"></div>
   </div>
   <div id="pg-cus" style="display:none">
-    <div class="pg-row2"><label>Qty <input id="pg-c-qty" type="number" min="1" value="1"></label></div>
     <div class="pg-libhd">Pernah dibuat (dari export / quotation lama)</div>
     <input id="pg-lib-q" class="pg-q" placeholder="Cari custom lama..." oninput="pgLibRender()" autocomplete="off">
     <div id="pg-lib" class="pg-results" style="max-height:30vh"></div>
     <div class="pg-libhd" style="margin-top:10px">Atau buat baru</div>
     <input id="pg-c-code" class="pg-q" placeholder="Nama / kode item">
     <input id="pg-c-desc" class="pg-q" placeholder="Deskripsi">
-    <div class="pg-row2"><label>Harga <input id="pg-c-price" type="number" step="1000" placeholder="boleh minus"></label></div>
-    <button type="button" class="pg-go" onclick="pgAddCustom()">Tambahkan</button>
+    <div class="pg-row2"><label>Harga <input id="pg-c-price" type="number" step="1000" placeholder="boleh minus"></label><label>Qty <input id="pg-c-qty" type="number" min="0" value="0"></label></div>
+    <button type="button" class="pg-go" onclick="pgAddCustom()">&#65291; Tambah ke quotation</button>
   </div>
+  <div id="pg-sel" class="pg-sel" style="display:none"></div>
 </div>
 <div id="pg-toasts" class="pg-toasts"></div>
 <div id="pg-toolbar" class="pg-toolbar" style="display:none">
@@ -1213,6 +1227,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
   <button type="button" onmousedown="event.preventDefault()" onclick="pgSize(-1)" title="Perkecil huruf">A&minus;</button>
   <button type="button" onmousedown="event.preventDefault()" onclick="pgSize(1)" title="Perbesar huruf">A+</button>
   <button type="button" onmousedown="event.preventDefault()" onclick="pgResetOne()" title="Kembalikan teks yang sedang dipilih ke aslinya">&#8634; Teks asli</button>
+  <label class="pg-fxl" title="Kurs EUR ke IDR untuk semua produk">Kurs <input id="pg-fx" type="number" step="100" onchange="pgSetFx(this.value)"></label>
   <button type="button" onmousedown="event.preventDefault()" onclick="pgNewSection()">&#65291; Bagian baru</button>
   <button type="button" onmousedown="event.preventDefault()" onclick="pgNewPage()">&#65291; Halaman teks</button>
   <button type="button" onmousedown="event.preventDefault()" onclick="pgClearAll()">Hapus semua edit</button>
@@ -4681,6 +4696,7 @@ function applyPagesUi(){
   if(b){b.classList.toggle('btn-dark',pagesMode);b.classList.toggle('btn-outline',!pagesMode);b.innerHTML=pagesMode?'&#9998;&#65039; Mode Pages: ON':'&#9998;&#65039; Mode Pages';}
   var tb=document.getElementById('pg-toolbar'); if(tb)tb.style.display=pagesMode?'flex':'none';
   var w=document.getElementById('doc-wrap'); if(w)w.classList.toggle('pg-mode',pagesMode);
+  if(typeof pgSyncFx==='function')pgSyncFx();
 }
 function togglePagesMode(){pagesMode=!pagesMode;if(!pagesMode&&typeof pgCloseAdd==='function')pgCloseAdd();applyPagesUi();buildDoc();}
 function pgCmd(c){document.execCommand(c,false,null);}
@@ -4752,6 +4768,7 @@ function pgRefresh(){
   },0);
 }
 function pgQtySet(i,v){if(!items[i])return;items[i].qty=Math.max(1,parseInt(v,10)||1);pgRefresh();}
+function pgTw(i){if(items[i]){items[i].twMarkupOn=!items[i].twMarkupOn;pgRefresh();}}
 function pgQty(i,d){if(items[i])pgQtySet(i,(items[i].qty||1)+d);}
 function pgDisc(i,v){if(!items[i])return;items[i].itemDisc=Math.max(0,Math.min(100,parseFloat(v)||0));pgRefresh();}
 var pgUndoSeq=0, pgUndoMap={};
@@ -4786,6 +4803,7 @@ function pgRowCtl(it){
     +'<button type="button" onclick="pgQty('+i+',-1)">&minus;</button>'
     +'<input type="number" min="1" value="'+it.qty+'" onchange="pgQtySet('+i+',this.value)" title="Qty">'
     +'<button type="button" onclick="pgQty('+i+',1)">+</button>'
+    +((!it.custom&&!(it.series&&it.series.indexOf('SM-')===0))?'<button type="button" class="pg-chip'+(it.twMarkupOn?' on':'')+'" onclick="pgTw('+i+')" title="Kali 1,8 (markup TW AUDiO) aktif/nonaktif">&times;1,8</button>':'')
     +'<span>diskon</span><input type="number" min="0" max="100" step="0.5" value="'+(itemDiscPct(it)||'')+'" placeholder="0" onchange="pgDisc('+i+',this.value)" title="Diskon %"><span>%</span>'
     +'<button type="button" onclick="pgMove('+i+',-1)" title="Naik">&uarr;</button>'
     +'<button type="button" onclick="pgMove('+i+',1)" title="Turun">&darr;</button>'
@@ -4798,7 +4816,7 @@ function pgOpenAdd(sec,insertAt,label){
   pgInsertAt=(insertAt==null||insertAt==='')?null:insertAt;
   document.getElementById('pg-add-sec').textContent='ke bagian: '+(pgAddSection||'(Umum)')+(label?(' · '+label):'');
   document.getElementById('pg-add').style.display='block';
-  pgTab(pgAddTab);pgSearch();
+  pgTab(pgAddTab);pgSearch();pgRenderSel();
   setTimeout(function(){var q=document.getElementById(pgAddTab==='cat'?'pg-q':'pg-lib-q');if(q)q.focus();},30);
 }
 function pgOpenAddAfter(uid){
@@ -4832,7 +4850,7 @@ function pgSearch(){
   document.getElementById('pg-results').innerHTML=out.length?out.map(function(k){
     var p=PRODUCTS[k], img=productImageSrc(p.code);
     var th=img?'<img class="pg-th" src="'+img+'" alt="">':'<div class="pg-th ph">'+escapeHtml(p.code)+'</div>';
-    return '<div class="pg-res" onclick="pgAdd('+k+')">'+th+'<div class="pg-rb"><span class="p">'+pgPriceLabel(p)+'</span><b>'+escapeHtml(p.code)+'</b> <span class="d">'+escapeHtml(p.series||'')+'</span><div class="d">'+escapeHtml((p.desc||'').substring(0,90))+'</div></div></div>';
+    return '<div class="pg-res'+((pgSel&&pgSel.kind==='cat'&&pgSel.k===k)?' sel':'')+'" onclick="pgSelectCat('+k+',this)">'+th+'<div class="pg-rb"><span class="p">'+pgPriceLabel(p)+'</span><b>'+escapeHtml(p.code)+'</b> <span class="d">'+escapeHtml(p.series||'')+'</span><div class="d">'+escapeHtml((p.desc||'').substring(0,90))+'</div></div></div>';
   }).join(''):'<div class="pg-res"><span class="d">Tidak ada yang cocok.</span></div>';
 }
 function pgEnsureSection(){
@@ -4840,23 +4858,67 @@ function pgEnsureSection(){
   if(sec&&sectionList.indexOf(sec)===-1)sectionList.push(sec);
   currentSection=sec;
 }
-function pgAdd(k,qtyOverride){
+var pgSel=null, pgSelQty=0, pgSelDisc=0, pgSelTw=true, pgSelNote='';
+function pgMarkSel(el){
+  document.querySelectorAll('#pg-results .pg-res.sel,#pg-lib .pg-res.sel').forEach(function(r){r.classList.remove('sel');});
+  if(el)el.classList.add('sel');
+}
+function pgSelectCat(k,el){
   var p=PRODUCTS[k]; if(!p)return;
-  var qty=qtyOverride||Math.max(1,parseInt(document.getElementById('pg-qty').value,10)||1);
-  var disc=Math.max(0,Math.min(100,parseFloat(document.getElementById('pg-disc').value)||0));
-  pgEnsureSection();
-  addProductToItems(p,qty,{fxOn:true,fxRate:globalFxRate,fxCurrency:'EUR',itemDisc:disc});
-  pgPlaceNew();
-  pgAddLog.unshift('✓ '+p.code+' ×'+qty+(disc?(' (diskon '+disc+'%)'):''));
+  pgSel={kind:'cat',k:k}; pgSelQty=0; pgSelDisc=pgSelDisc||0; pgSelTw=!isNoMarkupSeries(p.series); pgSelNote='';
+  pgMarkSel(el); pgRenderSel();
+}
+function pgSelectLib(i,el){
+  var c=pgPool[i]; if(!c)return;
+  pgSel={kind:'lib',c:c}; pgSelQty=0; pgSelDisc=c.disc||0; pgSelNote='';
+  pgMarkSel(el); pgRenderSel();
+}
+function pgRenderSel(){
+  var box=document.getElementById('pg-sel'); if(!box)return;
+  if(!pgSel){box.style.display='none';return;}
+  var isCat=pgSel.kind==='cat', p=isCat?PRODUCTS[pgSel.k]:null, c=isCat?null:pgSel.c;
+  var code=isCat?p.code:c.code, desc=isCat?p.desc:c.desc, price=isCat?pgPriceLabel(p):fmt(c.price);
+  var img=isCat?productImageSrc(p.code):'';
+  var isSM=isCat&&p.series&&p.series.indexOf('SM-')===0;
+  var th=img?'<img class="pg-sel-img" src="'+img+'" alt="">':'<div class="pg-sel-img ph">'+escapeHtml(code)+'</div>';
+  box.style.display='block';
+  box.innerHTML='<div class="pg-sel-top">'+th+'<div><b>'+escapeHtml(code)+'</b><div class="d">'+escapeHtml((desc||'').substring(0,110))+'</div><div class="p">Harga: '+price+'</div></div></div>'
+    +'<div class="pg-sel-row">Qty <span class="pg-step"><button type="button" onclick="pgSelQtyAdj(-1)">&minus;</button><input type="number" min="0" value="'+pgSelQty+'" onchange="pgSelQtySet(this.value)"><button type="button" onclick="pgSelQtyAdj(1)">+</button></span>'
+    +'Diskon <input class="sm" type="number" min="0" max="100" step="0.5" value="'+(pgSelDisc||'')+'" placeholder="0" onchange="pgSelDisc=Math.max(0,Math.min(100,parseFloat(this.value)||0))">%'
+    +'</div>'
+    +((isCat&&!isSM)?'<div class="pg-sel-row"><label><input type="checkbox" '+(pgSelTw?'checked':'')+' onchange="pgSelTw=this.checked"> &times;1,8</label>&nbsp; Kurs <input class="sm" style="width:78px" type="number" step="100" value="'+globalFxRate+'" onchange="pgSetFx(this.value)"></div>':'')
+    +'<button type="button" class="pg-go" '+(pgSelQty<1?'disabled':'')+' onclick="pgCommit()">'+(pgSelQty<1?'Isi qty dulu':'&#65291; Tambah ke quotation (&times;'+pgSelQty+')')+'</button>'
+    +(pgSelNote?'<div class="pg-note">'+escapeHtml(pgSelNote)+'</div>':'');
+}
+function pgSelQtyAdj(d){pgSelQty=Math.max(0,pgSelQty+d);pgRenderSel();}
+function pgSelQtySet(v){pgSelQty=Math.max(0,parseInt(v,10)||0);pgRenderSel();}
+function pgSyncFx(){var f=document.getElementById('pg-fx');if(f)f.value=globalFxRate;var g=document.getElementById('global-fx-rate');if(g)g.value=globalFxRate;}
+function pgSetFx(v){onGlobalFxRateChange(v);pgSyncFx();pgRenderSel();pgRefresh();}
+function pgCommit(){
+  if(!pgSel||pgSelQty<1)return;
+  var qty=pgSelQty, disc=pgSelDisc||0, code;
+  if(pgSel.kind==='cat'){
+    var p=PRODUCTS[pgSel.k]; code=p.code;
+    pgEnsureSection();
+    addProductToItems(p,qty,{fxOn:true,fxRate:globalFxRate,fxCurrency:'EUR',itemDisc:disc,twMarkupOn:pgSelTw});
+    pgPlaceNew();
+    ensurePairingData(function(){
+      var sug=suggestPairingsFor(p.code), box=document.getElementById('pg-pair');
+      box.innerHTML=sug.length?('Sering bersama '+escapeHtml(p.code)+': '+sug.map(function(s2){
+        var idx=PRODUCTS.findIndex(function(x){return x.code===s2.code;});
+        return idx<0?'':'<button type="button" onclick="pgSelectCat('+idx+')">'+escapeHtml(s2.code)+'</button>';
+      }).join('')):'';
+    });
+  } else {
+    var c=pgSel.c; code=c.code;
+    pgPushCustom(c.code,c.desc,c.price,qty,disc,c.specs||'');
+  }
+  pgAddLog.unshift('✓ '+code+' ×'+qty+(disc?(' (diskon '+disc+'%)'):''));
   document.getElementById('pg-log').innerHTML=pgAddLog.slice(0,6).map(escapeHtml).join('<br>');
+  pgSelNote='✓ '+code+' ×'+qty+' ditambahkan. Qty kembali ke 0.';
+  pgSelQty=0;
+  pgRenderSel();
   pgRefresh();
-  ensurePairingData(function(){
-    var sug=suggestPairingsFor(p.code), box=document.getElementById('pg-pair');
-    box.innerHTML=sug.length?('Sering bersama '+escapeHtml(p.code)+': '+sug.map(function(s){
-      var idx=PRODUCTS.findIndex(function(x){return x.code===s.code;});
-      return idx<0?'':'<button type="button" onclick="pgAdd('+idx+',1)">+ '+escapeHtml(s.code)+'</button>';
-    }).join('')):'';
-  });
 }
 function pgPushCustom(code,desc,price,qty,disc,specs){
   pgEnsureSection();
@@ -4865,12 +4927,13 @@ function pgPushCustom(code,desc,price,qty,disc,specs){
 }
 function pgAddCustom(){
   var code=document.getElementById('pg-c-code').value.trim(), desc=document.getElementById('pg-c-desc').value.trim();
-  var price=parseFloat(document.getElementById('pg-c-price').value), qty=Math.max(1,parseInt(document.getElementById('pg-c-qty').value,10)||1);
+  var price=parseFloat(document.getElementById('pg-c-price').value), qty=parseInt(document.getElementById('pg-c-qty').value,10)||0;
   if(!code){alert('Isi nama item dulu.');return;}
   if(!price||isNaN(price)){alert('Isi harga (boleh minus untuk potongan).');return;}
+  if(qty<1){alert('Isi qty dulu (minimal 1).');return;}
   pgPushCustom(code,desc,price,qty,0,'');
   ['pg-c-code','pg-c-desc','pg-c-price'].forEach(function(id){document.getElementById(id).value='';});
-  document.getElementById('pg-c-qty').value='1';
+  document.getElementById('pg-c-qty').value='0';
   pgRefresh();
 }
 /* custom items remembered from exports / saved quotes / history */
@@ -4901,15 +4964,8 @@ function pgLibRender(){
   var q=(document.getElementById('pg-lib-q').value||'').toLowerCase().trim(), toks=q.split(/\s+/).filter(Boolean);
   pgPool=pgLibPool().filter(function(c){var h=((c.code||'')+' '+(c.desc||'')).toLowerCase();return toks.every(function(t){return h.indexOf(t)!==-1;});}).slice(0,40);
   box.innerHTML=pgPool.length?pgPool.map(function(c,i){
-    return '<div class="pg-res" onclick="pgAddLib('+i+')"><div class="pg-rb"><span class="p">'+fmt(c.price)+'</span><b>'+escapeHtml(c.code||'')+'</b> <span class="d">'+(c.src==='export'?'dari export':'dari History')+(c.disc?(' · diskon '+c.disc+'%'):'')+'</span><div class="d">'+escapeHtml((c.desc||'').substring(0,90))+'</div></div></div>';
+    return '<div class="pg-res" onclick="pgSelectLib('+i+',this)"><div class="pg-rb"><span class="p">'+fmt(c.price)+'</span><b>'+escapeHtml(c.code||'')+'</b> <span class="d">'+(c.src==='export'?'dari export':'dari History')+(c.disc?(' · diskon '+c.disc+'%'):'')+'</span><div class="d">'+escapeHtml((c.desc||'').substring(0,90))+'</div></div></div>';
   }).join(''):'<div class="pg-res"><span class="d">Belum ada custom lama. Item custom yang pernah Dave export akan muncul di sini.</span></div>';
-}
-function pgAddLib(i){
-  var c=pgPool[i]; if(!c)return;
-  var qty=Math.max(1,parseInt(document.getElementById('pg-c-qty').value,10)||1);
-  pgPushCustom(c.code,c.desc,c.price,qty,c.disc||0,c.specs||'');
-  pgAddLog.unshift('✓ '+c.code+' ×'+qty);
-  pgRefresh();
 }
 /* sections: obvious add buttons */
 var PG_SEC_PRESETS=['Line Array System','Mixer System','Subwoofer System','Amplifier & Processor','Kabel & Aksesori','Jasa & Instalasi'];
