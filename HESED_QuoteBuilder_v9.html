@@ -425,6 +425,8 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 .isum .it{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#999;font-weight:700;margin-bottom:5px}
 .isum .ir{display:flex;justify-content:space-between;padding:2px 0}.isum .ileg{margin-top:7px;display:flex;flex-wrap:wrap;gap:4px}
 .isum .ichk{margin-top:6px;font-size:9.5px;font-weight:700}.isum .ichk.ok{color:#2e7d32}.isum .ichk.bad{color:#b3261e}
+@media print{#success-toast{display:none!important}}
+.preset-row{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--border)}.preset-row .hint{margin-top:3px}
 .pg-toolbar{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:#fff8dc;border:1px solid #e6cf7a;border-radius:8px;padding:6px 10px;margin:8px auto;max-width:794px;font-size:12px}
 .pg-toolbar button{border:1px solid #cdb55a;background:#fff;border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer}
 .pg-toolbar .pg-hint{display:none}
@@ -745,7 +747,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 <div class="top-bar">
   <div>
     <h1>HESED Quote Builder</h1>
-    <p>PT HESED Kharis Indonesia &nbsp;&middot;&nbsp; TW Audio 05-2026 &nbsp;&middot;&nbsp; Studiomaster 2024 &nbsp;&middot;&nbsp; <span id="build-stamp" title="Nomor versi: kalau angkanya beda dengan yang Dave harapkan, muat ulang halaman (Ctrl+Shift+R / tarik layar ke bawah)">build 23Nov-C</span></p>
+    <p>PT HESED Kharis Indonesia &nbsp;&middot;&nbsp; TW Audio 05-2026 &nbsp;&middot;&nbsp; Studiomaster 2024 &nbsp;&middot;&nbsp; <span id="build-stamp" title="Nomor versi: kalau angkanya beda dengan yang Dave harapkan, muat ulang halaman (Ctrl+Shift+R / tarik layar ke bawah)">build 24Nov-A</span></p>
   </div>
   <div class="top-bar-ref-pill" id="top-bar-ref-pill">
     <span class="top-bar-ref-lbl">No. Quotation</span>
@@ -1273,6 +1275,11 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 
 <!-- HISTORY -->
 <div class="pane" id="pane-history">
+  <div class="card" id="preset-card">
+    <h2>Quotation siap pakai</h2>
+    <div class="hint" style="margin-bottom:8px">Dibuat oleh Claude dari data yang Dave kirim. Muat ke builder untuk dicek, lalu simpan ke History kalau sudah cocok.</div>
+    <div id="preset-list"></div>
+  </div>
   <div class="card">
     <h2>Saved quotes</h2>
     <div id="history-setup-notice" style="display:none" class="idr-hint">
@@ -5722,6 +5729,32 @@ function loadQuoteHistoryList(){
   });
 }
 
+// Puts a saved-quote record (from History, or a built-in preset) into the builder.
+function applyQuoteRecord(r){
+  if(r.fx){document.getElementById('global-fx-rate').value=r.fx;onGlobalFxRateChange(r.fx);}
+  document.getElementById('client').value=r.client||'';
+  document.getElementById('contact').value=r.contact||'';
+  document.getElementById('address').value=r.address||'';
+  document.getElementById('project').value=r.project||'';
+  document.getElementById('qt-date').value=r.quote_date||'';
+  document.getElementById('client-code').value=r.client_code||'';
+  document.getElementById('ref-override').value=r.ref_override||'';
+  document.getElementById('seq-num').value=r.seq||1;
+  items=r.items||[];
+  sectionList=(r.section_list&&r.section_list.length)?r.section_list:[''];
+  customBlocks=r.custom_blocks||[];
+  applyPaymentTermsState(r.payment_terms||'5050',r.payment_terms_custom||'');
+  setDocShowPpn(r.show_ppn!==false);
+  setDocLinePpn(r.line_ppn===true);
+  docEdits=r.doc_edits||{};
+  currentSection='';
+  updateRef();
+  refreshSectionSelect();
+  renderAll();
+  renderBlocksList();
+  showTab('builder');
+}
+
 function loadQuoteFromHistory(ref){
   if(!historyConfigured())return;
   fetch(SUPABASE_URL+'/rest/v1/quotes?ref=eq.'+encodeURIComponent(ref)+'&select=*',{
@@ -5732,27 +5765,7 @@ function loadQuoteFromHistory(ref){
   }).then(function(rows){
     var r=rows&&rows[0];
     if(!r){alert('Quote not found (it may have been deleted).');return;}
-    document.getElementById('client').value=r.client||'';
-    document.getElementById('contact').value=r.contact||'';
-    document.getElementById('address').value=r.address||'';
-    document.getElementById('project').value=r.project||'';
-    document.getElementById('qt-date').value=r.quote_date||'';
-    document.getElementById('client-code').value=r.client_code||'';
-    document.getElementById('ref-override').value=r.ref_override||'';
-    document.getElementById('seq-num').value=r.seq||1;
-    items=r.items||[];
-    sectionList=(r.section_list&&r.section_list.length)?r.section_list:[''];
-    customBlocks=r.custom_blocks||[];
-    applyPaymentTermsState(r.payment_terms||'5050',r.payment_terms_custom||'');
-    setDocShowPpn(r.show_ppn!==false);
-    setDocLinePpn(r.line_ppn===true);
-    docEdits=r.doc_edits||{};
-    currentSection='';
-    updateRef();
-    refreshSectionSelect();
-    renderAll();
-    renderBlocksList();
-    showTab('builder');
+    applyQuoteRecord(r);
   }).catch(function(e){
     console.error('Load quote failed',e);
     alert('Couldn\'t reach the cloud — check internet connection.');
@@ -5774,6 +5787,30 @@ function deleteQuoteFromHistory(ref){
   });
 }
 
+/* ---- Built-in ready-made quotations (shown at the top of the History tab) ---- */
+var PRESET_QUOTES=[{
+  id:'grow-2611qt097-a',
+  title:'Grow Community Church \u2014 versi baru (ELLA6)',
+  note:'Kurs 21.000 \u00B7 ELLA6 dan VERA S32 \u00D71,8 \u00B7 aksesori tanpa \u00D71,8 \u00B7 amplifier IPX diskon 30% \u00B7 harga per produk sudah + PPN 11% \u00B7 Mixer System dibawa dari quotation sebelumnya',
+  record:{"client": "Grow Community Church", "contact": "Pdt. Andy Tjokro", "address": "Di Tempat", "project": "Pengadaan Sound System di Rooftop", "quote_date": "", "client_code": "GROWPIM", "ref_override": "2611QT097GROWPIM-A", "seq": 97, "items": [{"code": "ELLA6", "displayName": "TWAUDiO ELLA6", "series": "ELLA", "desc": "Elegant Line Array, 1×6.5\" / 5×1\"", "catalogPrice": 1970, "eurPrice": null, "idrPrice": null, "idrDirect": null, "qty": 24, "specs": "", "custom": false, "section": "Line Array System", "includesPPN": false, "fxOn": true, "fxRate": 21000, "fxCurrency": "EUR", "itemDisc": 0, "twMarkupOn": true, "docImgSize": "lg", "docDescSize": "md"}, {"code": "RPE6", "displayName": "TWAUDiO RPE6", "series": "ELLA", "desc": "Rigging plate for flying applications", "catalogPrice": 380, "eurPrice": null, "idrPrice": null, "idrDirect": null, "qty": 2, "specs": "", "custom": false, "section": "Line Array System", "includesPPN": false, "fxOn": true, "fxRate": 21000, "fxCurrency": "EUR", "itemDisc": 0, "twMarkupOn": false, "docImgSize": "lg", "docDescSize": "md"}, {"code": "BMP150", "displayName": "TWAUDiO BMP150", "series": "ELLA", "desc": "Bumper for flying applications with quick-change adapter", "catalogPrice": 750, "eurPrice": null, "idrPrice": null, "idrDirect": null, "qty": 2, "specs": "", "custom": false, "section": "Line Array System", "includesPPN": false, "fxOn": true, "fxRate": 21000, "fxCurrency": "EUR", "itemDisc": 0, "twMarkupOn": false, "docImgSize": "lg", "docDescSize": "md"}, {"code": "LSK425-0025", "displayName": "TWAUDiO LSK425-0025", "series": "ELLA-Install", "desc": "Speaker cable, 4x2.5 mm2, Length: 25 cm (9.8 in)", "catalogPrice": 66, "eurPrice": null, "idrPrice": null, "idrDirect": null, "qty": 20, "specs": "", "custom": false, "section": "Line Array System", "includesPPN": false, "fxOn": true, "fxRate": 21000, "fxCurrency": "EUR", "itemDisc": 0, "twMarkupOn": false, "docImgSize": "lg", "docDescSize": "md"}, {"code": "LSK425-0025R", "displayName": "TWAUDiO LSK425-0025R", "series": "ELLA-Install", "desc": "Reversed speaker cable, 4x2.5 mm2, Length: 25 cm (9.8 in)", "catalogPrice": 71, "eurPrice": null, "idrPrice": null, "idrDirect": null, "qty": 2, "specs": "", "custom": false, "section": "Line Array System", "includesPPN": false, "fxOn": true, "fxRate": 21000, "fxCurrency": "EUR", "itemDisc": 0, "twMarkupOn": false, "docImgSize": "lg", "docDescSize": "md"}, {"code": "VERA S32", "displayName": "TWAUDiO VERA S32", "series": "VERA", "desc": "Compact subwoofer 1×18\" front / 1×14\" rear", "catalogPrice": 4820, "eurPrice": null, "idrPrice": null, "idrDirect": null, "qty": 4, "specs": "Driver: 1×18\" front / 1×14\" rear\nFrequency range: 38 – 120 Hz\nPower capacity program / peak: 1200 / 2400 W\nSPLmax / 1m: 134 dB\nDimensions: 540 × 430 × 640 mm\nWeight: 55 kg", "custom": false, "section": "Line Array System", "includesPPN": false, "fxOn": true, "fxRate": 21000, "fxCurrency": "EUR", "itemDisc": 0, "twMarkupOn": true, "docImgSize": "lg", "docDescSize": "md"}, {"code": "VERA RF600", "displayName": "TWAUDiO VERA RF600", "series": "VERA", "desc": "Rigging Frame for VERA20 / VERA S32, up to 600 kg", "catalogPrice": 3040, "eurPrice": null, "idrPrice": null, "idrDirect": null, "qty": 2, "specs": "", "custom": false, "section": "Line Array System", "includesPPN": false, "fxOn": true, "fxRate": 21000, "fxCurrency": "EUR", "itemDisc": 0, "twMarkupOn": false, "docImgSize": "lg", "docDescSize": "md"}, {"code": "LSK44-300", "displayName": "TWAUDiO LSK44-300", "series": "Cables", "desc": "Loudspeaker cable 4×4mm² NL4FX, 30m", "catalogPrice": 360, "eurPrice": null, "idrPrice": null, "idrDirect": null, "qty": 4, "specs": "", "custom": false, "section": "Line Array System", "includesPPN": false, "fxOn": true, "fxRate": 21000, "fxCurrency": "EUR", "itemDisc": 0, "twMarkupOn": false, "docImgSize": "lg", "docDescSize": "md"}, {"code": "IPX20:4", "displayName": "TWAUDiO IPX20:4", "series": "Amp-Install-Dynacord", "desc": "Install amplifier, max. power: 4x2500 W / 8 ohms, 4x5000 W / 4 ohms", "catalogPrice": 12929, "eurPrice": null, "idrPrice": null, "idrDirect": null, "qty": 1, "specs": "", "custom": false, "section": "Line Array System", "includesPPN": false, "fxOn": true, "fxRate": 21000, "fxCurrency": "EUR", "itemDisc": 30, "twMarkupOn": false, "docImgSize": "lg", "docDescSize": "md"}, {"code": "IPX10:4", "displayName": "TWAUDiO IPX10:4", "series": "Amp-Install-Dynacord", "desc": "Install amplifier, max. power: 4x1250 W / 8 ohms, 4x2500 W / 4 ohms", "catalogPrice": 8615, "eurPrice": null, "idrPrice": null, "idrDirect": null, "qty": 1, "specs": "", "custom": false, "section": "Line Array System", "includesPPN": false, "fxOn": true, "fxRate": 21000, "fxCurrency": "EUR", "itemDisc": 30, "twMarkupOn": false, "docImgSize": "lg", "docDescSize": "md"}, {"code": "IPX5:4", "displayName": "TWAUDiO IPX5:4", "series": "Amp-Install-Dynacord", "desc": "Install amplifier, max. power: 4x1250 W / 8 ohms, 4x1250 W / 4 ohms", "catalogPrice": 7176, "eurPrice": null, "idrPrice": null, "idrDirect": null, "qty": 1, "specs": "", "custom": false, "section": "Line Array System", "includesPPN": false, "fxOn": true, "fxRate": 21000, "fxCurrency": "EUR", "itemDisc": 30, "twMarkupOn": false, "docImgSize": "lg", "docDescSize": "md"}, {"code": "Cadac CMJ50", "displayName": "Cadac CMJ50", "series": "Custom", "desc": "23.5\" and 6.5\" screen / 96 input channels / 56 busses / 20 faders / Local I/O : 16 AI - 8 AO - 8 DI - 8 DO / Waves interface / 2 internal PSUs / 39.5kg", "catalogPrice": 740684000, "eurPrice": null, "idrPrice": null, "idrDirect": null, "qty": 1, "specs": "", "custom": true, "section": "Mixer System", "includesPPN": false, "fxOn": false, "fxRate": 0, "fxCurrency": "", "itemDisc": 0, "twMarkupOn": false, "docImgSize": "lg", "docDescSize": "md"}, {"code": "Furman", "displayName": "Furman", "series": "Custom", "desc": "Furman Power Conditioner 10 Amphere", "catalogPrice": 4000000, "eurPrice": null, "idrPrice": null, "idrDirect": null, "qty": 2, "specs": "", "custom": true, "section": "Mixer System", "includesPPN": false, "fxOn": false, "fxRate": 0, "fxCurrency": "", "itemDisc": 0, "twMarkupOn": false, "docImgSize": "lg", "docDescSize": "md"}, {"code": "Cadac Six", "displayName": "Cadac Six", "series": "Custom", "desc": "The CDC six console had a single screen, 20 faders, 80 inputs and 56 busses, an integrated Waves card plus a 6” screen for control / automation", "catalogPrice": -162950480, "eurPrice": null, "idrPrice": null, "idrDirect": null, "qty": 1, "specs": "", "custom": true, "section": "Mixer System", "includesPPN": false, "fxOn": false, "fxRate": 0, "fxCurrency": "", "itemDisc": 0, "twMarkupOn": false, "docImgSize": "lg", "docDescSize": "md"}, {"code": "CM-DT64", "displayName": "CM-DT64", "series": "Custom", "desc": "1U / 2 Dante Ethernet Ports - 64 I/O at 96 kHz / 2 internal PSUs / 4.7kg", "catalogPrice": 95987472, "eurPrice": null, "idrPrice": null, "idrDirect": null, "qty": 1, "specs": "", "custom": true, "section": "Mixer System", "includesPPN": false, "fxOn": false, "fxRate": 0, "fxCurrency": "", "itemDisc": 0, "twMarkupOn": false, "docImgSize": "lg", "docDescSize": "md"}], "section_list": ["Line Array System", "Mixer System"], "custom_blocks": [], "payment_terms": "5050", "payment_terms_custom": "", "show_ppn": true, "line_ppn": true, "doc_edits": {}, "fx": 21000}
+}];
+function renderPresetCards(){
+  var box=document.getElementById('preset-list'); if(!box)return;
+  box.innerHTML=PRESET_QUOTES.map(function(p,i){
+    var r=p.record, sub=r.items.reduce(function(a,it){return a;},0);
+    return '<div class="preset-row"><div><b>'+escapeHtml(p.title)+'</b><div class="hint">'+escapeHtml(p.note)+'</div></div>'
+      +'<button class="btn btn-dark" type="button" onclick="loadPresetQuote('+i+')">Muat ke builder</button></div>';
+  }).join('');
+}
+function loadPresetQuote(i){
+  var p=PRESET_QUOTES[i]; if(!p)return;
+  if(items.length&&!confirm('Quotation yang sedang dibuka di builder akan diganti. Lanjut?'))return;
+  var r=JSON.parse(JSON.stringify(p.record));
+  r.quote_date=r.quote_date||'';
+  applyQuoteRecord(r);
+  showSuccessToast('Dimuat: '+p.title+'. Cek dulu, lalu klik Save to history.');
+}
+
 loadStoredProductImages();
 loadDefaultProductImages();
 loadStockLevels();
@@ -5783,6 +5820,7 @@ loadPersistedSeq();
 loadPersistedFxRate();
 updateMemCount();
 refreshSectionSelect();
+renderPresetCards();
 checkForDraftOnLoad();
 </script>
 </body>
