@@ -748,7 +748,7 @@ td:nth-child(4),th:nth-child(4){text-align:center}
 <div class="top-bar">
   <div>
     <h1>HESED Quote Builder</h1>
-    <p>PT HESED Kharis Indonesia &nbsp;&middot;&nbsp; TW Audio 05-2026 &nbsp;&middot;&nbsp; Studiomaster 2024 &nbsp;&middot;&nbsp; <span id="build-stamp" title="Nomor versi: kalau angkanya beda dengan yang Dave harapkan, muat ulang halaman (Ctrl+Shift+R / tarik layar ke bawah)">build 24Nov-G</span></p>
+    <p>PT HESED Kharis Indonesia &nbsp;&middot;&nbsp; TW Audio 05-2026 &nbsp;&middot;&nbsp; Studiomaster 2024 &nbsp;&middot;&nbsp; <span id="build-stamp" title="Nomor versi: kalau angkanya beda dengan yang Dave harapkan, muat ulang halaman (Ctrl+Shift+R / tarik layar ke bawah)">build 24Nov-H</span></p>
   </div>
   <div class="top-bar-ref-pill" id="top-bar-ref-pill">
     <span class="top-bar-ref-lbl">No. Quotation</span>
@@ -4406,7 +4406,7 @@ function buildItemRowHtml(it,i){
         var discAmt=Math.round(u*effPct/100);
         unitBreakdown+='<br><span class="pb-disc">Disc '+effPct+'%: −'+fmt(discAmt)+'</span>';
       }
-      unitBreakdown+='<br><span class="pb-final">'+fmt(uFinal)+'</span>';
+      unitBreakdown+='<br><span class="pb-final">'+fmtDoc(uFinal)+'</span>';
     }
     unitBreakdown+='</div>';
 
@@ -4415,7 +4415,7 @@ function buildItemRowHtml(it,i){
     if(!hasAnyCalc){
       totalBreakdown+='<span style="font-size:11px;color:#ccc">—</span>';
     } else {
-      totalBreakdown+='<span class="pb-total">'+fmt(totalFinal)+'</span>'
+      totalBreakdown+='<span class="pb-total">'+fmtDoc(totalFinal)+'</span>'
         +(saved>0?'<br><span class="pb-saved">hemat '+fmt(saved)+'</span>':'');
     }
     totalBreakdown+='</div>';
@@ -4498,7 +4498,7 @@ function calcTotals(){
 
 function updateTots(){
   var t=calcTotals();
-  document.getElementById('grand').textContent=fmt(t.grand);
+  document.getElementById("grand").innerHTML=fmtDoc(t.grand);
   var subEl=document.getElementById('tot-subtotal');
   if(subEl)subEl.textContent=fmt(t.subtotal);
   var ppnEl=document.getElementById('tot-ppn-amt');
@@ -5263,9 +5263,9 @@ function buildDoc(target){
     if(it.fxOn&&it.fxRate>0)f1+=' \u00D7 '+it.fxRate.toLocaleString('id-ID');
     if(it.twMarkupOn)f1+=' \u00D7 '+twTxt;
     if(it.includesPPN)f1+=' \u00F7 1,11';
-    f1+=' = <b>'+fmt(u)+'</b>';
-    if(pct>0)f1+=' \u2192 \u2212'+(Math.round(pct*100)/100)+'% = <b>'+fmt(f)+'</b>';
-    if(docLinePpn)f1+=' \u2192 +PPN 11% = <b>'+fmt(unitShowOf(it))+'</b>';
+    f1+=' = <b>'+fmtDoc(u)+'</b>';
+    if(pct>0)f1+=' \u2192 \u2212'+(Math.round(pct*100)/100)+'% = <b>'+fmtDoc(f)+'</b>';
+    if(docLinePpn)f1+=' \u2192 +PPN 11% = <b>'+fmtDoc(unitShowOf(it))+'</b>';
     return '<div class="ibox"><div class="ichips">'+chips.join('')+'</div><div class="iform"><span>Rumus</span> '+f1+'</div></div>';
   }
   function buildRowsHtml(arr,gambarPct){
@@ -5306,13 +5306,13 @@ function buildDoc(target){
   var totalsHtml='<div class="doc-totals-wrap">'
     +'<div class="doc-tot-inner">'
       +(docLinePpn
-        ? '<div class="doc-tot-grand"><span class="lbl">Harga Total</span><span class="amt">'+fmt(grand)+'</span></div>'
+        ? '<div class="doc-tot-grand"><span class="lbl">Harga Total</span><span class="amt">'+fmtDoc(grand)+'</span></div>'
         : docShowPpn
-        ? '<div class="doc-tot-row"><span class="lbl">Harga Total</span><span class="amt">'+fmt(tots.subtotal)+'</span></div>'
-          +'<div class="doc-tot-row"><span class="lbl">PPN 11%</span><span class="amt">'+fmt(tots.ppn)+'</span></div>'
+        ? '<div class="doc-tot-row"><span class="lbl">Harga Total</span><span class="amt">'+fmtDoc(tots.subtotal)+'</span></div>'
+          +'<div class="doc-tot-row"><span class="lbl">PPN 11%</span><span class="amt">'+fmtDoc(tots.ppn)+'</span></div>'
           +'<div class="doc-tot-divider"></div>'
-          +'<div class="doc-tot-grand"><span class="lbl">Harga Total dan PPN</span><span class="amt">'+fmt(grand)+'</span></div>'
-        : '<div class="doc-tot-grand"><span class="lbl">Harga Total</span><span class="amt">'+fmt(grand)+'</span></div>')
+          +'<div class="doc-tot-grand"><span class="lbl">Harga Total dan PPN</span><span class="amt">'+fmtDoc(grand)+'</span></div>'
+        : '<div class="doc-tot-grand"><span class="lbl">Harga Total</span><span class="amt">'+fmtDoc(grand)+'</span></div>')
     +'</div>'
   +'</div>';
 
@@ -5327,9 +5327,9 @@ function buildDoc(target){
     var sumLn=items.reduce(function(a,it){return a+lineShowOf(it);},0);
     var okSum=(sumLn===(docLinePpn?grand:tots.subtotal));
     intSummaryHtml='<div class="isum"><div class="it">Ringkasan internal</div>'
-      +'<div class="ir"><span>Harga list barang katalog'+(docLinePpn?' (+PPN)':'')+'</span><span>'+fmt(lC)+'</span></div>'
-      +'<div class="ir"><span>Diskon barang katalog</span><span><b>\u2212'+fmt(dC)+' ('+pC+'%)</b></span></div>'
-      +(lX||fX?'<div class="ir"><span>Item custom / jasa</span><span>'+fmt(fX)+'</span></div>':'')
+      +'<div class="ir"><span>Harga list barang katalog'+(docLinePpn?' (+PPN)':'')+'</span><span>'+fmtDoc(lC)+'</span></div>'
+      +'<div class="ir"><span>Diskon barang katalog</span><span><b>\u2212'+fmtDoc(dC)+' ('+pC+'%)</b></span></div>'
+      +(lX||fX?'<div class="ir"><span>Item custom / jasa</span><span>'+fmtDoc(fX)+'</span></div>':'')
       +'<div class="ir"><span>Kurs</span><span>'+globalFxRate.toLocaleString('id-ID')+'</span></div>'
       +'<div class="ichk '+(okSum?'ok':'bad')+'">'+(okSum?'\u2713 Angka sama dengan dokumen untuk klien':'\u26A0 Jumlah baris tidak sama dengan total')+'</div>'
       +'<div class="ileg"><span class="ichip kurs">Kurs</span><span class="ichip tw">\u00D7'+String(TW_MARKUP).replace('.',',')+'</span><span class="ichip disc">Diskon</span><span class="ichip odd">Diskon beda</span><span class="ichip off">tanpa \u00D7'+String(TW_MARKUP).replace('.',',')+'</span></div>'
